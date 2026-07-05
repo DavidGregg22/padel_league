@@ -1,81 +1,59 @@
-# Padel League Manager
+<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
-A Python app for running a padel league with **rotating doubles partners**, **match scores**, and **Premier League-style points** — with a different roster size each season.
+<p align="center">
+<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+</p>
 
-## How it works
+## About Laravel
 
-- **Seasons** — create a new season each year (or whenever you want) with its own player list
-- **Rotating partners** — each matchday, players are paired differently so everyone partners with different people over the season
-- **Doubles matches** — 2v2 padel; teams of two play against each other
-- **Scoring** — record sets won (e.g. 2-1)
-- **League table** — individual standings using football-style points:
-  - Win = **3 pts**, Draw = **1 pt**, Loss = **0 pts**
-  - Tie-breakers: set difference, then sets for
+Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
 
-### Roster rules
+- [Simple, fast routing engine](https://laravel.com/docs/routing).
+- [Powerful dependency injection container](https://laravel.com/docs/container).
+- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
+- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
+- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
+- [Robust background job processing](https://laravel.com/docs/queues).
+- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
 
-For scheduling to work cleanly, each season needs:
+Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
-- **At least 4 players**
-- **Even number** of players (doubles)
-- **Divisible by 4** (e.g. 4, 8, 12) so every pair can play each round with no one sitting out
+## Learning Laravel
 
-A full season generates **N − 1 matchdays** where N is the player count, so everyone gets a chance to partner with different players.
+Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
 
-## Quick start
+If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
 
-```bash
-cd /home/david/Documents/Padel
+## Laravel Sponsors
 
-# Interactive menu (easiest)
-python main.py
+We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
 
-# Or use CLI commands directly
-python main.py player-add Alice Bob Carol Dave Eve Frank Grace Henry
+### Premium Partners
 
-python main.py season-create "Summer League" 2026
-python main.py season-add-players 1 --all
+- **[Vehikl](https://vehikl.com)**
+- **[Tighten Co.](https://tighten.co)**
+- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
+- **[64 Robots](https://64robots.com)**
+- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
+- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
+- **[Redberry](https://redberry.international/laravel-development)**
+- **[Active Logic](https://activelogic.com)**
 
-python main.py schedule-generate 1
-python main.py fixtures 1
-python main.py result 1 2 1
-python main.py standings 1
-```
+## Contributing
 
-## Commands
+Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
 
-| Command | Description |
-|---------|-------------|
-| `python main.py` | Interactive menu |
-| `player-add <names...>` | Register one or more players |
-| `player-add --names "A,B,C"` | Register players from comma-separated list |
-| `player-add --file players.txt` | Register players from file (one name per line) |
-| `player-list` | List all players |
-| `season-create <name> <year>` | Create a season |
-| `season-list` | List seasons and rosters |
-| `season-add-players <id> <names...>` | Add multiple players to season |
-| `season-add-players <id> --all` | Add every registered player to season |
-| `season-remove-player <id> <player_id>` | Remove player from season |
-| `schedule-generate <id> [--force]` | Generate all matchdays |
-| `schedule-round <id>` | Add one extra matchday |
-| `fixtures <id>` | Show all fixtures |
-| `result <match_id> <score_a> <score_b>` | Record result |
-| `standings <id>` | Show league table |
+## Code of Conduct
 
-Data is stored in `~/.padel_league/league.db` by default. Override with `--db /path/to/file.db`.
+In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
 
-## Project structure
+## Security Vulnerabilities
 
-```
-Padel/
-├── main.py                 # Entry point
-└── padel_league/
-    ├── models.py           # Data types
-    ├── storage.py          # SQLite persistence
-    ├── league.py           # Scheduling & standings
-    └── cli.py              # CLI & interactive menu
-```
+If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
 
-## Requirements
+## License
 
-Python 3.10+ (stdlib only — no pip install needed).
+The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
