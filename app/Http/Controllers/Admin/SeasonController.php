@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Season;
 use App\Models\DoublePair;
+use App\Models\Season;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -13,6 +13,7 @@ class SeasonController extends Controller
     public function index()
     {
         $seasons = Season::orderBy('year', 'desc')->get();
+
         return view('admin.seasons.index', compact('seasons'));
     }
 
@@ -29,6 +30,7 @@ class SeasonController extends Controller
         ]);
 
         $season = Season::create($data);
+
         return redirect()->route('admin.seasons.show', $season)->with('success', 'Season created.');
     }
 
@@ -38,6 +40,7 @@ class SeasonController extends Controller
         $players = User::where('is_admin', false)->get();
         $singlesMatches = $season->singlesMatches()->with(['player1', 'player2'])->latest('played_at')->get();
         $doublesMatches = $season->doublesMatches()->with(['pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2'])->latest('played_at')->get();
+
         return view('admin.seasons.show', compact('season', 'pairs', 'players', 'singlesMatches', 'doublesMatches'));
     }
 
@@ -45,12 +48,14 @@ class SeasonController extends Controller
     {
         Season::query()->update(['active' => false]);
         $season->update(['active' => true]);
+
         return back()->with('success', 'Season activated.');
     }
 
     public function destroy(Season $season)
     {
         $season->delete();
+
         return redirect()->route('admin.seasons.index')->with('success', 'Season deleted.');
     }
 
@@ -63,7 +68,7 @@ class SeasonController extends Controller
         foreach ($players->chunk(2) as $pair) {
             if ($pair->count() === 2) {
                 DoublePair::create([
-                    'season_id'  => $season->id,
+                    'season_id' => $season->id,
                     'player1_id' => $pair->first()->id,
                     'player2_id' => $pair->last()->id,
                 ]);
@@ -76,6 +81,7 @@ class SeasonController extends Controller
     public function editPair(Season $season, DoublePair $pair)
     {
         $players = User::where('is_admin', false)->get();
+
         return view('admin.seasons.edit_pair', compact('season', 'pair', 'players'));
     }
 
@@ -87,12 +93,14 @@ class SeasonController extends Controller
         ]);
 
         $pair->update($data);
+
         return redirect()->route('admin.seasons.show', $season)->with('success', 'Pair updated.');
     }
 
     public function destroyPair(Season $season, DoublePair $pair)
     {
         $pair->delete();
+
         return back()->with('success', 'Pair removed.');
     }
 
@@ -104,7 +112,7 @@ class SeasonController extends Controller
         ]);
 
         DoublePair::create([
-            'season_id'  => $season->id,
+            'season_id' => $season->id,
             'player1_id' => $data['player1_id'],
             'player2_id' => $data['player2_id'],
         ]);

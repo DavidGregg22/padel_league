@@ -13,7 +13,7 @@ class AdminSeeder extends Seeder
         User::firstOrCreate(
             ['email' => 'admin@padel.local'],
             [
-                'name'     => 'Admin',
+                'name' => 'Admin',
                 'password' => Hash::make('password'),
                 'is_admin' => true,
             ]

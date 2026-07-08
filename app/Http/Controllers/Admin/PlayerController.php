@@ -12,6 +12,7 @@ class PlayerController extends Controller
     public function index()
     {
         $players = User::where('is_admin', false)->orderBy('name')->get();
+
         return view('admin.players.index', compact('players'));
     }
 
@@ -23,14 +24,14 @@ class PlayerController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'     => 'required|string|max:100',
-            'email'    => 'required|email|unique:users,email',
+            'name' => 'required|string|max:100',
+            'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
         ]);
 
         User::create([
-            'name'     => $data['name'],
-            'email'    => $data['email'],
+            'name' => $data['name'],
+            'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'is_admin' => false,
         ]);
@@ -46,13 +47,13 @@ class PlayerController extends Controller
     public function update(Request $request, User $player)
     {
         $data = $request->validate([
-            'name'     => 'required|string|max:100',
-            'email'    => 'required|email|unique:users,email,' . $player->id,
+            'name' => 'required|string|max:100',
+            'email' => 'required|email|unique:users,email,'.$player->id,
             'password' => 'nullable|string|min:8|confirmed',
         ]);
 
         $player->update([
-            'name'  => $data['name'],
+            'name' => $data['name'],
             'email' => $data['email'],
             ...($data['password'] ? ['password' => Hash::make($data['password'])] : []),
         ]);
@@ -63,6 +64,7 @@ class PlayerController extends Controller
     public function destroy(User $player)
     {
         $player->delete();
+
         return redirect()->route('admin.players.index')->with('success', 'Player removed.');
     }
 }

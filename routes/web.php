@@ -1,9 +1,9 @@
 <?php
 
-use App\Http\Controllers\LeagueController;
-use App\Http\Controllers\Admin\SeasonController;
 use App\Http\Controllers\Admin\MatchController;
 use App\Http\Controllers\Admin\PlayerController;
+use App\Http\Controllers\Admin\SeasonController;
+use App\Http\Controllers\LeagueController;
 use Illuminate\Support\Facades\Route;
 
 // Public league views

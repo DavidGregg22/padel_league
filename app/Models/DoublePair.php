@@ -25,6 +25,6 @@ class DoublePair extends Model
 
     public function displayName(): string
     {
-        return $this->pair_name ?? ($this->player1->name . ' & ' . $this->player2->name);
+        return $this->pair_name ?? ($this->player1->name.' & '.$this->player2->name);
     }
 }

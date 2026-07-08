@@ -10,16 +10,30 @@ class DoublesMatch extends Model
 
     protected $casts = [
         'played_at' => 'datetime',
-        'sets'      => 'array',
+        'sets' => 'array',
     ];
 
-    public function season() { return $this->belongsTo(Season::class); }
-    public function pair1()  { return $this->belongsTo(DoublePair::class, 'pair1_id'); }
-    public function pair2()  { return $this->belongsTo(DoublePair::class, 'pair2_id'); }
+    public function season()
+    {
+        return $this->belongsTo(Season::class);
+    }
+
+    public function pair1()
+    {
+        return $this->belongsTo(DoublePair::class, 'pair1_id');
+    }
+
+    public function pair2()
+    {
+        return $this->belongsTo(DoublePair::class, 'pair2_id');
+    }
 
     public function setsDisplay(): string
     {
-        if (!$this->sets) return '';
-        return implode(', ', array_map(fn($s) => $s['p1'].'-'.$s['p2'], $this->sets));
+        if (! $this->sets) {
+            return '';
+        }
+
+        return implode(', ', array_map(fn ($s) => $s['p1'].'-'.$s['p2'], $this->sets));
     }
 }

@@ -32,7 +32,7 @@ class Season extends Model
             $won = SinglesMatch::where('season_id', $this->id)
                 ->where(function ($q) use ($player) {
                     $q->where('player1_id', $player->id)->whereColumn('score1', '>', 'score2')
-                      ->orWhere('player2_id', $player->id)->whereColumn('score2', '>', 'score1');
+                        ->orWhere('player2_id', $player->id)->whereColumn('score2', '>', 'score1');
                 })->whereNotNull('score1')->count();
 
             $drawn = SinglesMatch::where('season_id', $this->id)
@@ -52,15 +52,16 @@ class Season extends Model
                 $standings[] = [
                     'player' => $player,
                     'played' => $played,
-                    'won'    => $won,
-                    'drawn'  => $drawn,
-                    'lost'   => $lost,
+                    'won' => $won,
+                    'drawn' => $drawn,
+                    'lost' => $lost,
                     'points' => $points,
                 ];
             }
         }
 
-        usort($standings, fn($a, $b) => $b['points'] <=> $a['points']);
+        usort($standings, fn ($a, $b) => $b['points'] <=> $a['points']);
+
         return $standings;
     }
 
@@ -73,7 +74,7 @@ class Season extends Model
             $won = DoublesMatch::where('season_id', $this->id)
                 ->where(function ($q) use ($pair) {
                     $q->where('pair1_id', $pair->id)->whereColumn('score1', '>', 'score2')
-                      ->orWhere('pair2_id', $pair->id)->whereColumn('score2', '>', 'score1');
+                        ->orWhere('pair2_id', $pair->id)->whereColumn('score2', '>', 'score1');
                 })->whereNotNull('score1')->count();
 
             $drawn = DoublesMatch::where('season_id', $this->id)
@@ -90,16 +91,17 @@ class Season extends Model
             $points = ($won * 3) + $drawn;
 
             $standings[] = [
-                'pair'   => $pair,
+                'pair' => $pair,
                 'played' => $played,
-                'won'    => $won,
-                'drawn'  => $drawn,
-                'lost'   => $lost,
+                'won' => $won,
+                'drawn' => $drawn,
+                'lost' => $lost,
                 'points' => $points,
             ];
         }
 
-        usort($standings, fn($a, $b) => $b['points'] <=> $a['points']);
+        usort($standings, fn ($a, $b) => $b['points'] <=> $a['points']);
+
         return $standings;
     }
 }
