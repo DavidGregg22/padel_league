@@ -30,7 +30,7 @@ class Season extends Model
 
     public function singlesStandings(): array
     {
-        $playerIds = $this->club->users()->pluck('users.id');
+        $playerIds = $this->club->singlesPlayers()->pluck('users.id');
         $standings = [];
 
         foreach ($playerIds as $playerId) {
@@ -107,7 +107,7 @@ class Season extends Model
      */
     public function singlesFixtures(): array
     {
-        $players = $this->club->users()->orderBy('name')->get();
+        $players = $this->club->singlesPlayers()->orderBy('name')->get();
         $matches = $this->singlesMatches()->whereNotNull('score1')->get();
         $fixtures = [];
 

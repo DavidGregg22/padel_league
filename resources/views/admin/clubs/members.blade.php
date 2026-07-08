@@ -61,6 +61,7 @@
                         <tr>
                             <th class="px-4 py-3 text-left">Name</th>
                             <th class="px-4 py-3 text-left hidden sm:table-cell">Email</th>
+                            <th class="px-4 py-3 text-center">Plays</th>
                             <th class="px-4 py-3 text-center">Role</th>
                             <th class="px-4 py-3 text-right">Actions</th>
                         </tr>
@@ -70,6 +71,17 @@
                         <tr class="hover:bg-blue-800/40">
                             <td class="px-4 py-3 text-white font-medium">{{ $member->name }}</td>
                             <td class="px-4 py-3 text-blue-300 hidden sm:table-cell">{{ $member->email }}</td>
+                            <td class="px-4 py-3 text-center">
+                                <form method="POST" action="{{ route('admin.members.plays', [$club, $member]) }}">
+                                    @csrf @method('PATCH')
+                                    <select name="plays" onchange="this.form.submit()"
+                                            class="text-xs bg-blue-800 border-blue-700 text-blue-200 rounded px-2 py-1 focus:ring-teal-500 focus:border-teal-500">
+                                        <option value="both" {{ $member->pivot->plays === 'both' ? 'selected' : '' }}>Both</option>
+                                        <option value="singles" {{ $member->pivot->plays === 'singles' ? 'selected' : '' }}>Singles</option>
+                                        <option value="doubles" {{ $member->pivot->plays === 'doubles' ? 'selected' : '' }}>Doubles</option>
+                                    </select>
+                                </form>
+                            </td>
                             <td class="px-4 py-3 text-center">
                                 @if($member->pivot->role === 'admin')
                                     <span class="text-xs text-teal-400 bg-teal-900/50 px-2 py-0.5 rounded font-medium">Admin</span>

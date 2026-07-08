@@ -118,4 +118,15 @@ class ClubController extends Controller
 
         return back()->with('success', "{$user->name} is now a regular member.");
     }
+
+    public function updatePlays(Request $request, Club $club, User $user)
+    {
+        $data = $request->validate([
+            'plays' => 'required|in:singles,doubles,both',
+        ]);
+
+        $club->users()->updateExistingPivot($user->id, ['plays' => $data['plays']]);
+
+        return back()->with('success', "{$user->name} set to play {$data['plays']}.");
+    }
 }

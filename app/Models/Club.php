@@ -21,7 +21,7 @@ class Club extends Model
     public function users()
     {
         return $this->belongsToMany(User::class, 'club_user')
-            ->withPivot('role')
+            ->withPivot('role', 'plays')
             ->withTimestamps();
     }
 
@@ -33,6 +33,18 @@ class Club extends Model
     public function members()
     {
         return $this->users()->wherePivot('role', 'member');
+    }
+
+    /** Players who play singles (plays = 'singles' or 'both'). */
+    public function singlesPlayers()
+    {
+        return $this->users()->wherePivotIn('plays', ['singles', 'both']);
+    }
+
+    /** Players who play doubles (plays = 'doubles' or 'both'). */
+    public function doublesPlayers()
+    {
+        return $this->users()->wherePivotIn('plays', ['doubles', 'both']);
     }
 
     public function seasons()

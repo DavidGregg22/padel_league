@@ -71,7 +71,7 @@ class SeasonController extends Controller
 
         DoublePair::where('season_id', $season->id)->delete();
 
-        $players = $club->users()->get()->shuffle();
+        $players = $club->doublesPlayers()->get()->shuffle();
 
         foreach ($players->chunk(2) as $chunk) {
             if ($chunk->count() === 2) {
@@ -83,7 +83,7 @@ class SeasonController extends Controller
             }
         }
 
-        return back()->with('success', 'Pairs randomized.');
+        return back()->with('success', 'Pairs randomized from doubles players.');
     }
 
     public function editPair(Club $club, Season $season, DoublePair $pair)

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Club;
+use App\Models\DoublePair;
 use App\Models\Season;
 
 class LeagueController extends Controller
@@ -19,7 +20,7 @@ class LeagueController extends Controller
         return view('league.home', compact('clubs'));
     }
 
-    /** Main standings page for a club. */
+    /** Overview page — quick standings preview for both. */
     public function index(Club $club)
     {
         $season = $club->activeSeason();
@@ -30,27 +31,40 @@ class LeagueController extends Controller
         return view('league.index', compact('club', 'season', 'seasons', 'singlesStandings', 'doublesStandings'));
     }
 
-    /** Full season detail for a club. */
-    public function season(Club $club, Season $season)
+    /** Dedicated singles page — standings, fixtures, results. */
+    public function singles(Club $club, Season $season)
     {
         abort_unless($season->club_id === $club->id, 404);
 
-        $singlesStandings = $season->singlesStandings();
-        $doublesStandings = $season->doublesStandings();
-        $singlesMatches = $season->singlesMatches()->with(['player1', 'player2'])->latest('played_at')->get();
-        $doublesMatches = $season->doublesMatches()->with(['pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2'])->latest('played_at')->get();
+        $standings = $season->singlesStandings();
+        $fixtures = $season->singlesFixtures();
+        $fixturesPlayed = count(array_filter($fixtures, fn ($f) => $f['played']));
+        $matches = $season->singlesMatches()->with(['player1', 'player2'])->latest('played_at')->get();
 
-        return view('league.season', compact('club', 'season', 'singlesStandings', 'doublesStandings', 'singlesMatches', 'doublesMatches'));
+        return view('league.singles', compact('club', 'season', 'standings', 'fixtures', 'fixturesPlayed', 'matches'));
     }
 
-    /** Order of play — round-robin fixtures. */
+    /** Dedicated doubles page — standings, pairs, fixtures, results. */
+    public function doubles(Club $club, Season $season)
+    {
+        abort_unless($season->club_id === $club->id, 404);
+
+        $standings = $season->doublesStandings();
+        $pairs = DoublePair::where('season_id', $season->id)->with(['player1', 'player2'])->get();
+        $fixtures = $season->doublesFixtures();
+        $fixturesPlayed = count(array_filter($fixtures, fn ($f) => $f['played']));
+        $matches = $season->doublesMatches()->with(['pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2'])->latest('played_at')->get();
+
+        return view('league.doubles', compact('club', 'season', 'standings', 'pairs', 'fixtures', 'fixturesPlayed', 'matches'));
+    }
+
+    /** Combined fixtures page (kept for backward compat). */
     public function fixtures(Club $club, Season $season)
     {
         abort_unless($season->club_id === $club->id, 404);
 
         $singlesFixtures = $season->singlesFixtures();
         $doublesFixtures = $season->doublesFixtures();
-
         $singlesPlayed = count(array_filter($singlesFixtures, fn ($f) => $f['played']));
         $doublesPlayed = count(array_filter($doublesFixtures, fn ($f) => $f['played']));
 

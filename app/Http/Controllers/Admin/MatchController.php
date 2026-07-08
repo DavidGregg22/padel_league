@@ -18,7 +18,7 @@ class MatchController extends Controller
     {
         abort_unless($season->club_id === $club->id, 404);
 
-        $players = $club->users()->orderBy('name')->get();
+        $players = $club->singlesPlayers()->orderBy('name')->get();
 
         return view('admin.matches.create_singles', compact('club', 'season', 'players'));
     }
@@ -59,7 +59,7 @@ class MatchController extends Controller
     {
         abort_unless($season->club_id === $club->id, 404);
 
-        $players = $club->users()->orderBy('name')->get();
+        $players = $club->singlesPlayers()->orderBy('name')->get();
 
         return view('admin.matches.edit_singles', compact('club', 'season', 'match', 'players'));
     }

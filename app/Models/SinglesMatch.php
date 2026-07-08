@@ -66,7 +66,7 @@ class SinglesMatch extends Model
             }
 
             if ($p1 === $p2) {
-                return "Set ".($i + 1).": invalid tie ({$p1}-{$p2}). Only 6-6 allowed for unfinished sets.";
+                return 'Set '.($i + 1).": invalid tie ({$p1}-{$p2}). Only 6-6 allowed for unfinished sets.";
             }
 
             // Tiebreak: 7-6
@@ -84,7 +84,7 @@ class SinglesMatch extends Model
                 continue;
             }
 
-            return "Set ".($i + 1).": invalid score ({$p1}-{$p2}). Valid: 6-0 to 6-4, 7-5, 7-6, or 6-6.";
+            return 'Set '.($i + 1).": invalid score ({$p1}-{$p2}). Valid: 6-0 to 6-4, 7-5, 7-6, or 6-6.";
         }
 
         return null;

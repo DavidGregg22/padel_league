@@ -20,7 +20,8 @@ Route::middleware('auth')->group(function () {
     // Club league views — any member of the club
     Route::middleware('club.member')->prefix('clubs/{club}')->name('club.')->group(function () {
         Route::get('/', [LeagueController::class, 'index'])->name('league');
-        Route::get('/season/{season}', [LeagueController::class, 'season'])->name('season');
+        Route::get('/season/{season}/singles', [LeagueController::class, 'singles'])->name('singles');
+        Route::get('/season/{season}/doubles', [LeagueController::class, 'doubles'])->name('doubles');
         Route::get('/season/{season}/fixtures', [LeagueController::class, 'fixtures'])->name('fixtures');
     });
 
@@ -34,6 +35,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('members/{user}', [ClubController::class, 'removeMember'])->name('members.remove');
         Route::patch('members/{user}/promote', [ClubController::class, 'promoteMember'])->name('members.promote');
         Route::patch('members/{user}/demote', [ClubController::class, 'demoteMember'])->name('members.demote');
+        Route::patch('members/{user}/plays', [ClubController::class, 'updatePlays'])->name('members.plays');
 
         // Seasons
         Route::get('seasons', [SeasonController::class, 'index'])->name('seasons.index');
