@@ -29,6 +29,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('seasons/{season}/activate', [SeasonController::class, 'activate'])->name('seasons.activate');
     Route::delete('seasons/{season}', [SeasonController::class, 'destroy'])->name('seasons.destroy');
     Route::post('seasons/{season}/randomize-pairs', [SeasonController::class, 'randomizePairs'])->name('seasons.randomize-pairs');
+    Route::get('seasons/{season}/pairs/{pair}/edit', [SeasonController::class, 'editPair'])->name('seasons.pairs.edit');
+    Route::patch('seasons/{season}/pairs/{pair}', [SeasonController::class, 'updatePair'])->name('seasons.pairs.update');
+    Route::delete('seasons/{season}/pairs/{pair}', [SeasonController::class, 'destroyPair'])->name('seasons.pairs.destroy');
+    Route::post('seasons/{season}/pairs', [SeasonController::class, 'storePair'])->name('seasons.pairs.store');
 
     // Singles matches
     Route::get('seasons/{season}/singles/create', [MatchController::class, 'createSingles'])->name('matches.singles.create');

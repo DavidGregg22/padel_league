@@ -54,25 +54,61 @@ class SeasonController extends Controller
         return redirect()->route('admin.seasons.index')->with('success', 'Season deleted.');
     }
 
-    public function randomizePairs(Season $season)    {
-        // Remove existing pairs for this season
+    public function randomizePairs(Season $season)
+    {
         DoublePair::where('season_id', $season->id)->delete();
 
         $players = User::where('is_admin', false)->get()->shuffle();
 
-        // Pair them up (if odd number, last player sits out)
-        $pairs = $players->chunk(2);
-
-        foreach ($pairs as $pair) {
+        foreach ($players->chunk(2) as $pair) {
             if ($pair->count() === 2) {
                 DoublePair::create([
-                    'season_id' => $season->id,
+                    'season_id'  => $season->id,
                     'player1_id' => $pair->first()->id,
                     'player2_id' => $pair->last()->id,
                 ]);
             }
         }
 
-        return back()->with('success', 'Pairs randomized for this season.');
+        return back()->with('success', 'Pairs randomized.');
+    }
+
+    public function editPair(Season $season, DoublePair $pair)
+    {
+        $players = User::where('is_admin', false)->get();
+        return view('admin.seasons.edit_pair', compact('season', 'pair', 'players'));
+    }
+
+    public function updatePair(Request $request, Season $season, DoublePair $pair)
+    {
+        $data = $request->validate([
+            'player1_id' => 'required|exists:users,id|different:player2_id',
+            'player2_id' => 'required|exists:users,id',
+        ]);
+
+        $pair->update($data);
+        return redirect()->route('admin.seasons.show', $season)->with('success', 'Pair updated.');
+    }
+
+    public function destroyPair(Season $season, DoublePair $pair)
+    {
+        $pair->delete();
+        return back()->with('success', 'Pair removed.');
+    }
+
+    public function storePair(Request $request, Season $season)
+    {
+        $data = $request->validate([
+            'player1_id' => 'required|exists:users,id|different:player2_id',
+            'player2_id' => 'required|exists:users,id',
+        ]);
+
+        DoublePair::create([
+            'season_id'  => $season->id,
+            'player1_id' => $data['player1_id'],
+            'player2_id' => $data['player2_id'],
+        ]);
+
+        return back()->with('success', 'Pair added.');
     }
 }

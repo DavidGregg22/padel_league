@@ -25,12 +25,27 @@ class MatchController extends Controller
         $data = $request->validate([
             'player1_id' => 'required|exists:users,id|different:player2_id',
             'player2_id' => 'required|exists:users,id',
-            'score1'     => 'required|integer|min:0|max:9',
-            'score2'     => 'required|integer|min:0|max:9',
+            'sets_input' => 'required|string|max:200',
             'played_at'  => 'nullable|date',
         ]);
 
-        SinglesMatch::create(array_merge($data, ['season_id' => $season->id]));
+        $sets = SinglesMatch::parseSetsString($data['sets_input']);
+        if (empty($sets)) {
+            return back()->withInput()->withErrors(['sets_input' => 'Enter sets like: 6-4, 3-6, 7-5']);
+        }
+
+        [$s1, $s2] = SinglesMatch::computeSetScores($sets);
+
+        SinglesMatch::create([
+            'season_id'  => $season->id,
+            'player1_id' => $data['player1_id'],
+            'player2_id' => $data['player2_id'],
+            'sets'       => $sets,
+            'score1'     => $s1,
+            'score2'     => $s2,
+            'played_at'  => $data['played_at'] ?? null,
+        ]);
+
         return redirect()->route('admin.seasons.show', $season)->with('success', 'Singles match added.');
     }
 
@@ -45,12 +60,26 @@ class MatchController extends Controller
         $data = $request->validate([
             'player1_id' => 'required|exists:users,id|different:player2_id',
             'player2_id' => 'required|exists:users,id',
-            'score1'     => 'required|integer|min:0|max:9',
-            'score2'     => 'required|integer|min:0|max:9',
+            'sets_input' => 'required|string|max:200',
             'played_at'  => 'nullable|date',
         ]);
 
-        $match->update($data);
+        $sets = SinglesMatch::parseSetsString($data['sets_input']);
+        if (empty($sets)) {
+            return back()->withInput()->withErrors(['sets_input' => 'Enter sets like: 6-4, 3-6, 7-5']);
+        }
+
+        [$s1, $s2] = SinglesMatch::computeSetScores($sets);
+
+        $match->update([
+            'player1_id' => $data['player1_id'],
+            'player2_id' => $data['player2_id'],
+            'sets'       => $sets,
+            'score1'     => $s1,
+            'score2'     => $s2,
+            'played_at'  => $data['played_at'] ?? null,
+        ]);
+
         return redirect()->route('admin.seasons.show', $season)->with('success', 'Singles match updated.');
     }
 
@@ -71,14 +100,29 @@ class MatchController extends Controller
     public function storeDoubles(Request $request, Season $season)
     {
         $data = $request->validate([
-            'pair1_id'  => 'required|exists:double_pairs,id|different:pair2_id',
-            'pair2_id'  => 'required|exists:double_pairs,id',
-            'score1'    => 'required|integer|min:0|max:9',
-            'score2'    => 'required|integer|min:0|max:9',
-            'played_at' => 'nullable|date',
+            'pair1_id'   => 'required|exists:double_pairs,id|different:pair2_id',
+            'pair2_id'   => 'required|exists:double_pairs,id',
+            'sets_input' => 'required|string|max:200',
+            'played_at'  => 'nullable|date',
         ]);
 
-        DoublesMatch::create(array_merge($data, ['season_id' => $season->id]));
+        $sets = SinglesMatch::parseSetsString($data['sets_input']);
+        if (empty($sets)) {
+            return back()->withInput()->withErrors(['sets_input' => 'Enter sets like: 6-4, 3-6, 7-5']);
+        }
+
+        [$s1, $s2] = SinglesMatch::computeSetScores($sets);
+
+        DoublesMatch::create([
+            'season_id' => $season->id,
+            'pair1_id'  => $data['pair1_id'],
+            'pair2_id'  => $data['pair2_id'],
+            'sets'      => $sets,
+            'score1'    => $s1,
+            'score2'    => $s2,
+            'played_at' => $data['played_at'] ?? null,
+        ]);
+
         return redirect()->route('admin.seasons.show', $season)->with('success', 'Doubles match added.');
     }
 
@@ -91,14 +135,28 @@ class MatchController extends Controller
     public function updateDoubles(Request $request, Season $season, DoublesMatch $match)
     {
         $data = $request->validate([
-            'pair1_id'  => 'required|exists:double_pairs,id|different:pair2_id',
-            'pair2_id'  => 'required|exists:double_pairs,id',
-            'score1'    => 'required|integer|min:0|max:9',
-            'score2'    => 'required|integer|min:0|max:9',
-            'played_at' => 'nullable|date',
+            'pair1_id'   => 'required|exists:double_pairs,id|different:pair2_id',
+            'pair2_id'   => 'required|exists:double_pairs,id',
+            'sets_input' => 'required|string|max:200',
+            'played_at'  => 'nullable|date',
         ]);
 
-        $match->update($data);
+        $sets = SinglesMatch::parseSetsString($data['sets_input']);
+        if (empty($sets)) {
+            return back()->withInput()->withErrors(['sets_input' => 'Enter sets like: 6-4, 3-6, 7-5']);
+        }
+
+        [$s1, $s2] = SinglesMatch::computeSetScores($sets);
+
+        $match->update([
+            'pair1_id'  => $data['pair1_id'],
+            'pair2_id'  => $data['pair2_id'],
+            'sets'      => $sets,
+            'score1'    => $s1,
+            'score2'    => $s2,
+            'played_at' => $data['played_at'] ?? null,
+        ]);
+
         return redirect()->route('admin.seasons.show', $season)->with('success', 'Doubles match updated.');
     }
 

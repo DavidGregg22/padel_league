@@ -1,0 +1,8 @@
+.git
+.env
+node_modules
+public/build
+vendor
+*.log
+docker-compose*.yml
+README.md
