@@ -35,8 +35,9 @@ class MatchController extends Controller
         ]);
 
         $sets = SinglesMatch::parseSetsString($data['sets_input']);
-        if (empty($sets)) {
-            return back()->withInput()->withErrors(['sets_input' => 'Enter sets like: 6-4, 3-6, 7-5']);
+        $error = SinglesMatch::validateSets($sets);
+        if ($error) {
+            return back()->withInput()->withErrors(['sets_input' => $error]);
         }
 
         [$s1, $s2] = SinglesMatch::computeSetScores($sets);
@@ -75,8 +76,9 @@ class MatchController extends Controller
         ]);
 
         $sets = SinglesMatch::parseSetsString($data['sets_input']);
-        if (empty($sets)) {
-            return back()->withInput()->withErrors(['sets_input' => 'Enter sets like: 6-4, 3-6, 7-5']);
+        $error = SinglesMatch::validateSets($sets);
+        if ($error) {
+            return back()->withInput()->withErrors(['sets_input' => $error]);
         }
 
         [$s1, $s2] = SinglesMatch::computeSetScores($sets);
@@ -125,8 +127,9 @@ class MatchController extends Controller
         ]);
 
         $sets = SinglesMatch::parseSetsString($data['sets_input']);
-        if (empty($sets)) {
-            return back()->withInput()->withErrors(['sets_input' => 'Enter sets like: 6-4, 3-6, 7-5']);
+        $error = SinglesMatch::validateSets($sets);
+        if ($error) {
+            return back()->withInput()->withErrors(['sets_input' => $error]);
         }
 
         [$s1, $s2] = SinglesMatch::computeSetScores($sets);
@@ -165,8 +168,9 @@ class MatchController extends Controller
         ]);
 
         $sets = SinglesMatch::parseSetsString($data['sets_input']);
-        if (empty($sets)) {
-            return back()->withInput()->withErrors(['sets_input' => 'Enter sets like: 6-4, 3-6, 7-5']);
+        $error = SinglesMatch::validateSets($sets);
+        if ($error) {
+            return back()->withInput()->withErrors(['sets_input' => $error]);
         }
 
         [$s1, $s2] = SinglesMatch::computeSetScores($sets);

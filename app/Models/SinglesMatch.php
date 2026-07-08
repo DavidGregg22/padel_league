@@ -30,8 +30,6 @@ class SinglesMatch extends Model
 
     /**
      * Parse a sets string like "6-4, 3-6, 7-5" into [['p1'=>6,'p2'=>4], ...]
-     * A set is won by whoever wins more games (tennis: need 6+ with 2 clear, or 7 in tiebreak).
-     * We keep it simple: most games wins the set.
      */
     public static function parseSetsString(string $input): array
     {
@@ -43,6 +41,48 @@ class SinglesMatch extends Model
         }
 
         return $sets;
+    }
+
+    /**
+     * Validate that each set score is a valid padel/tennis set.
+     * Valid scores: 6-0..6-4, 7-5, 7-6 (and their reverses).
+     * Returns an error message string or null if valid.
+     */
+    public static function validateSets(array $sets): ?string
+    {
+        if (empty($sets)) {
+            return 'Enter at least one set (e.g. 6-4, 7-5).';
+        }
+
+        foreach ($sets as $i => $set) {
+            $p1 = $set['p1'];
+            $p2 = $set['p2'];
+            $high = max($p1, $p2);
+            $low = min($p1, $p2);
+
+            if ($p1 === $p2) {
+                return "Set ".($i + 1).": can't be a tie ({$p1}-{$p2}).";
+            }
+
+            // Tiebreak: 7-6
+            if ($high === 7 && $low === 6) {
+                continue;
+            }
+
+            // Normal set: winner has 6, loser has 0-4
+            if ($high === 6 && $low <= 4) {
+                continue;
+            }
+
+            // 7-5: winner broke at 6-5
+            if ($high === 7 && $low === 5) {
+                continue;
+            }
+
+            return "Set ".($i + 1).": invalid score ({$p1}-{$p2}). Valid: 6-0 to 6-4, 7-5, or 7-6.";
+        }
+
+        return null;
     }
 
     /**

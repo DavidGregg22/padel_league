@@ -40,7 +40,7 @@
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm min-w-[340px]">
                                 <thead class="bg-blue-800 text-blue-200 uppercase text-xs">
-                                    <tr><th class="px-4 py-3 text-left">#</th><th class="px-4 py-3 text-left">Player</th><th class="px-3 py-3 text-center">P</th><th class="px-3 py-3 text-center">W</th><th class="px-3 py-3 text-center">D</th><th class="px-3 py-3 text-center">L</th><th class="px-3 py-3 text-center font-bold">Pts</th></tr>
+                                    <tr><th class="px-4 py-3 text-left">#</th><th class="px-4 py-3 text-left">Player</th><th class="px-3 py-3 text-center">P</th><th class="px-3 py-3 text-center">W</th><th class="px-3 py-3 text-center">L</th><th class="px-3 py-3 text-center font-bold">Pts</th></tr>
                                 </thead>
                                 <tbody class="divide-y divide-blue-800">
                                     @forelse($singlesStandings as $i => $row)
@@ -49,12 +49,11 @@
                                             <td class="px-4 py-3 font-medium text-white">{{ $i === 0 ? '🏆 ' : '' }}{{ $row['player']->name }}</td>
                                             <td class="px-3 py-3 text-center text-blue-300">{{ $row['played'] }}</td>
                                             <td class="px-3 py-3 text-center text-emerald-400 font-medium">{{ $row['won'] }}</td>
-                                            <td class="px-3 py-3 text-center text-amber-400">{{ $row['drawn'] }}</td>
                                             <td class="px-3 py-3 text-center text-red-400">{{ $row['lost'] }}</td>
                                             <td class="px-3 py-3 text-center font-bold text-teal-300">{{ $row['points'] }}</td>
                                         </tr>
                                     @empty
-                                        <tr><td colspan="7" class="px-4 py-6 text-center text-blue-400">No matches played yet.</td></tr>
+                                        <tr><td colspan="6" class="px-4 py-6 text-center text-blue-400">No matches played yet.</td></tr>
                                     @endforelse
                                 </tbody>
                             </table>
@@ -66,7 +65,7 @@
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm min-w-[340px]">
                                 <thead class="bg-blue-800 text-blue-200 uppercase text-xs">
-                                    <tr><th class="px-4 py-3 text-left">#</th><th class="px-4 py-3 text-left">Pair</th><th class="px-3 py-3 text-center">P</th><th class="px-3 py-3 text-center">W</th><th class="px-3 py-3 text-center">D</th><th class="px-3 py-3 text-center">L</th><th class="px-3 py-3 text-center font-bold">Pts</th></tr>
+                                    <tr><th class="px-4 py-3 text-left">#</th><th class="px-4 py-3 text-left">Pair</th><th class="px-3 py-3 text-center">P</th><th class="px-3 py-3 text-center">W</th><th class="px-3 py-3 text-center">L</th><th class="px-3 py-3 text-center font-bold">Pts</th></tr>
                                 </thead>
                                 <tbody class="divide-y divide-blue-800">
                                     @forelse($doublesStandings as $i => $row)
@@ -75,12 +74,11 @@
                                             <td class="px-4 py-3 font-medium text-white">{{ $i === 0 ? '🏆 ' : '' }}{{ $row['pair']->displayName() }}</td>
                                             <td class="px-3 py-3 text-center text-blue-300">{{ $row['played'] }}</td>
                                             <td class="px-3 py-3 text-center text-emerald-400 font-medium">{{ $row['won'] }}</td>
-                                            <td class="px-3 py-3 text-center text-amber-400">{{ $row['drawn'] }}</td>
                                             <td class="px-3 py-3 text-center text-red-400">{{ $row['lost'] }}</td>
                                             <td class="px-3 py-3 text-center font-bold text-amber-400">{{ $row['points'] }}</td>
                                         </tr>
                                     @empty
-                                        <tr><td colspan="7" class="px-4 py-6 text-center text-blue-400">No matches played yet.</td></tr>
+                                        <tr><td colspan="6" class="px-4 py-6 text-center text-blue-400">No matches played yet.</td></tr>
                                     @endforelse
                                 </tbody>
                             </table>
