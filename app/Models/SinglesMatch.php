@@ -45,7 +45,7 @@ class SinglesMatch extends Model
 
     /**
      * Validate that each set score is a valid padel/tennis set.
-     * Valid scores: 6-0..6-4, 7-5, 7-6 (and their reverses).
+     * Valid scores: 6-0..6-4, 7-5, 7-6, 6-6 (unfinished tiebreak = draw).
      * Returns an error message string or null if valid.
      */
     public static function validateSets(array $sets): ?string
@@ -60,8 +60,13 @@ class SinglesMatch extends Model
             $high = max($p1, $p2);
             $low = min($p1, $p2);
 
+            // 6-6: unfinished tiebreak (draw)
+            if ($p1 === 6 && $p2 === 6) {
+                continue;
+            }
+
             if ($p1 === $p2) {
-                return "Set ".($i + 1).": can't be a tie ({$p1}-{$p2}).";
+                return "Set ".($i + 1).": invalid tie ({$p1}-{$p2}). Only 6-6 allowed for unfinished sets.";
             }
 
             // Tiebreak: 7-6
@@ -79,7 +84,7 @@ class SinglesMatch extends Model
                 continue;
             }
 
-            return "Set ".($i + 1).": invalid score ({$p1}-{$p2}). Valid: 6-0 to 6-4, 7-5, or 7-6.";
+            return "Set ".($i + 1).": invalid score ({$p1}-{$p2}). Valid: 6-0 to 6-4, 7-5, 7-6, or 6-6.";
         }
 
         return null;

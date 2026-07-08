@@ -21,6 +21,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('club.member')->prefix('clubs/{club}')->name('club.')->group(function () {
         Route::get('/', [LeagueController::class, 'index'])->name('league');
         Route::get('/season/{season}', [LeagueController::class, 'season'])->name('season');
+        Route::get('/season/{season}/fixtures', [LeagueController::class, 'fixtures'])->name('fixtures');
     });
 
     // Club admin panel — must be club admin
