@@ -75,22 +75,47 @@
 
                 <div class="p-5 space-y-2">
                     @forelse($fixtures as $fixture)
-                        <div class="flex items-center justify-between bg-blue-800/50 rounded-lg px-4 py-3 {{ $fixture['played'] ? 'opacity-70' : '' }}">
-                            <div class="flex items-center gap-3 flex-1 min-w-0">
-                                <span class="font-medium text-white text-sm truncate">{{ $fixture['pair1']->displayName() }}</span>
-                                <span class="text-blue-400 text-xs shrink-0">vs</span>
-                                <span class="font-medium text-white text-sm truncate">{{ $fixture['pair2']->displayName() }}</span>
-                            </div>
-                            <div class="shrink-0 ml-3">
-                                @if($fixture['played'])
-                                    <span class="text-xs font-mono font-bold text-emerald-400">{{ $fixture['match']->score1 }}–{{ $fixture['match']->score2 }}</span>
-                                    @if($fixture['match']->sets)
-                                        <span class="text-xs text-blue-400 ml-1">({{ $fixture['match']->setsDisplay() }})</span>
+                        <div class="flex flex-col bg-blue-800/50 rounded-lg px-4 py-3 {{ $fixture['played'] ? 'opacity-70' : '' }}"
+                             x-data="{ showForm: false }">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3 flex-1 min-w-0">
+                                    <span class="font-medium text-white text-sm truncate">{{ $fixture['pair1']->displayName() }}</span>
+                                    <span class="text-blue-400 text-xs shrink-0">vs</span>
+                                    <span class="font-medium text-white text-sm truncate">{{ $fixture['pair2']->displayName() }}</span>
+                                </div>
+                                <div class="shrink-0 ml-3">
+                                    @if($fixture['played'])
+                                        <span class="text-xs font-mono font-bold text-emerald-400">{{ $fixture['match']->score1 }}–{{ $fixture['match']->score2 }}</span>
+                                        @if($fixture['match']->sets)
+                                            <span class="text-xs text-blue-400 ml-1">({{ $fixture['match']->setsDisplay() }})</span>
+                                        @endif
+                                    @else
+                                        @if(auth()->user()->isClubAdmin($club))
+                                            <button @click="showForm = !showForm" class="text-xs text-amber-400 bg-amber-900/50 px-2 py-1 rounded font-medium hover:bg-amber-900 transition-colors">
+                                                Log Score
+                                            </button>
+                                        @else
+                                            <span class="text-xs text-amber-400 bg-amber-900/40 px-2 py-0.5 rounded font-medium">Pending</span>
+                                        @endif
                                     @endif
-                                @else
-                                    <span class="text-xs text-amber-400 bg-amber-900/40 px-2 py-0.5 rounded font-medium">Pending</span>
-                                @endif
+                                </div>
                             </div>
+                            @if(!$fixture['played'] && auth()->user()->isClubAdmin($club))
+                            <div x-show="showForm" x-cloak class="mt-3 pt-3 border-t border-blue-700">
+                                <form method="POST" action="{{ route('admin.matches.doubles.store', [$club, $season]) }}" class="flex flex-wrap gap-2 items-end">
+                                    @csrf
+                                    <input type="hidden" name="pair1_id" value="{{ $fixture['pair1']->id }}">
+                                    <input type="hidden" name="pair2_id" value="{{ $fixture['pair2']->id }}">
+                                    <input type="hidden" name="played_at" value="{{ date('Y-m-d') }}">
+                                    <div class="flex-1 min-w-[120px]">
+                                        <label class="block text-xs text-blue-400 mb-1">Sets (e.g. 6-4, 7-5)</label>
+                                        <input type="text" name="sets_input" required placeholder="6-4, 7-5"
+                                               class="w-full text-sm bg-blue-800 border-blue-700 text-white placeholder-blue-500 rounded-md px-3 py-1.5 focus:ring-teal-500 focus:border-teal-500">
+                                    </div>
+                                    <button type="submit" class="bg-amber-500 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-amber-600 transition-colors">Save</button>
+                                </form>
+                            </div>
+                            @endif
                         </div>
                     @empty
                         <p class="text-blue-400 text-sm text-center py-4">No pairs assigned yet.</p>
