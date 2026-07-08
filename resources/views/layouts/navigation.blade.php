@@ -1,30 +1,40 @@
+@php
+    $currentClub = request()->route('club');
+@endphp
 <nav x-data="{ open: false }" class="bg-slate-800 border-b border-slate-700">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-14">
             <div class="flex items-center">
-                <!-- Logo / Brand -->
                 <a href="{{ route('home') }}" class="flex items-center gap-2 text-white font-bold text-lg tracking-tight">
                     🎾 Padel
                 </a>
 
                 <!-- Desktop Nav Links -->
                 <div class="hidden sm:flex sm:items-center sm:ms-8 sm:gap-1">
-                    <a href="{{ route('home') }}"
-                       class="px-3 py-2 rounded-md text-sm font-medium transition-colors
-                              {{ request()->routeIs('home') ? 'bg-slate-700 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700' }}">
-                        League
-                    </a>
                     @auth
-                        @if(auth()->user()->isAdmin())
-                            <a href="{{ route('admin.seasons.index') }}"
-                               class="px-3 py-2 rounded-md text-sm font-medium transition-colors
-                                      {{ request()->routeIs('admin.seasons*') ? 'bg-slate-700 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700' }}">
-                                Seasons
+                        @if($currentClub)
+                            <a href="{{ route('club.league', $currentClub) }}"
+                               class="px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors
+                                      {{ request()->routeIs('club.league') || request()->routeIs('club.season') ? 'bg-slate-700 text-white' : '' }}">
+                                {{ $currentClub->name }}
                             </a>
-                            <a href="{{ route('admin.players.index') }}"
-                               class="px-3 py-2 rounded-md text-sm font-medium transition-colors
-                                      {{ request()->routeIs('admin.players*') ? 'bg-slate-700 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700' }}">
-                                Players
+                            @if(auth()->user()->isClubAdmin($currentClub))
+                                <a href="{{ route('admin.seasons.index', $currentClub) }}"
+                                   class="px-3 py-2 rounded-md text-sm font-medium transition-colors
+                                          {{ request()->routeIs('admin.seasons*') ? 'bg-slate-700 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700' }}">
+                                    Seasons
+                                </a>
+                                <a href="{{ route('admin.members', $currentClub) }}"
+                                   class="px-3 py-2 rounded-md text-sm font-medium transition-colors
+                                          {{ request()->routeIs('admin.members*') ? 'bg-slate-700 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700' }}">
+                                    Members
+                                </a>
+                            @endif
+                        @endif
+                        @if(auth()->user()->clubs()->count() > 1)
+                            <a href="{{ route('home') }}"
+                               class="px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700 transition-colors">
+                                My Clubs
                             </a>
                         @endif
                     @endauth
@@ -45,6 +55,9 @@
                     </x-slot>
                     <x-slot name="content">
                         <x-dropdown-link :href="route('profile.edit')">Profile</x-dropdown-link>
+                        @if(auth()->user()->isAdmin())
+                            <x-dropdown-link :href="route('super.clubs.index')">Super Admin</x-dropdown-link>
+                        @endif
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <x-dropdown-link :href="route('logout')"
@@ -75,23 +88,18 @@
     <!-- Mobile menu -->
     <div :class="{'block': open, 'hidden': !open}" class="hidden sm:hidden border-t border-slate-700">
         <div class="px-2 pt-2 pb-3 space-y-1">
-            <a href="{{ route('home') }}"
-               class="block px-3 py-2 rounded-md text-sm font-medium transition-colors
-                      {{ request()->routeIs('home') ? 'bg-slate-700 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700' }}">
-                🎾 League
-            </a>
             @auth
-                @if(auth()->user()->isAdmin())
-                    <a href="{{ route('admin.seasons.index') }}"
-                       class="block px-3 py-2 rounded-md text-sm font-medium transition-colors
-                              {{ request()->routeIs('admin.seasons*') ? 'bg-slate-700 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700' }}">
-                        ⚙️ Seasons
+                @if($currentClub)
+                    <a href="{{ route('club.league', $currentClub) }}" class="block px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700">
+                        🎾 {{ $currentClub->name }}
                     </a>
-                    <a href="{{ route('admin.players.index') }}"
-                       class="block px-3 py-2 rounded-md text-sm font-medium transition-colors
-                              {{ request()->routeIs('admin.players*') ? 'bg-slate-700 text-white' : 'text-slate-300 hover:text-white hover:bg-slate-700' }}">
-                        👥 Players
-                    </a>
+                    @if(auth()->user()->isClubAdmin($currentClub))
+                        <a href="{{ route('admin.seasons.index', $currentClub) }}" class="block px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700">⚙️ Seasons</a>
+                        <a href="{{ route('admin.members', $currentClub) }}" class="block px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700">👥 Members</a>
+                    @endif
+                @endif
+                @if(auth()->user()->clubs()->count() > 1)
+                    <a href="{{ route('home') }}" class="block px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700">🏠 My Clubs</a>
                 @endif
             @endauth
         </div>
@@ -101,11 +109,11 @@
                     <div class="text-sm font-medium text-white">{{ Auth::user()->name }}</div>
                     <div class="text-xs text-slate-400">{{ Auth::user()->email }}</div>
                 </div>
-                <a href="{{ route('profile.edit') }}" class="block px-3 py-2 rounded-md text-sm text-slate-300 hover:text-white hover:bg-slate-700 transition-colors">Profile</a>
+                <a href="{{ route('profile.edit') }}" class="block px-3 py-2 rounded-md text-sm text-slate-300 hover:text-white hover:bg-slate-700">Profile</a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button onclick="event.preventDefault(); this.closest('form').submit();"
-                            class="block w-full text-left px-3 py-2 rounded-md text-sm text-slate-300 hover:text-white hover:bg-slate-700 transition-colors">
+                            class="block w-full text-left px-3 py-2 rounded-md text-sm text-slate-300 hover:text-white hover:bg-slate-700">
                         Log Out
                     </button>
                 </form>

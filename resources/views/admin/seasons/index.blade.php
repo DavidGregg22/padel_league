@@ -1,11 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-wrap justify-between items-center gap-3">
-            <h2 class="font-bold text-lg text-blue-100">Seasons</h2>
-            <a href="{{ route('admin.seasons.create') }}"
-               class="bg-teal-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-teal-700 transition-colors">
-                + New Season
-            </a>
+            <h2 class="font-bold text-lg text-blue-100">Seasons — {{ $club->name }}</h2>
+            <a href="{{ route('admin.seasons.create', $club) }}" class="bg-teal-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-teal-700 transition-colors">+ New Season</a>
         </div>
     </x-slot>
 
@@ -13,17 +10,11 @@
         @if(session('success'))
             <div class="mb-4 bg-emerald-900/50 text-emerald-300 border border-emerald-700 px-4 py-3 rounded-md text-sm">{{ session('success') }}</div>
         @endif
-
         <div class="bg-blue-900 shadow rounded-lg overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm min-w-[400px]">
                     <thead class="bg-blue-800 text-blue-200 uppercase text-xs">
-                        <tr>
-                            <th class="px-6 py-3 text-left">Season</th>
-                            <th class="px-6 py-3 text-center">Year</th>
-                            <th class="px-6 py-3 text-center">Status</th>
-                            <th class="px-6 py-3 text-right">Actions</th>
-                        </tr>
+                        <tr><th class="px-6 py-3 text-left">Season</th><th class="px-6 py-3 text-center">Year</th><th class="px-6 py-3 text-center">Status</th><th class="px-6 py-3 text-right">Actions</th></tr>
                     </thead>
                     <tbody class="divide-y divide-blue-800">
                         @forelse($seasons as $season)
@@ -38,12 +29,9 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-right space-x-3">
-                                    <a href="{{ route('admin.seasons.show', $season) }}" class="text-teal-400 hover:text-teal-300 font-medium">Manage</a>
+                                    <a href="{{ route('admin.seasons.show', [$club, $season]) }}" class="text-teal-400 hover:text-teal-300 font-medium">Manage</a>
                                     @if(!$season->active)
-                                        <form method="POST" action="{{ route('admin.seasons.activate', $season) }}" class="inline">
-                                            @csrf
-                                            <button class="text-emerald-400 hover:text-emerald-300 font-medium">Activate</button>
-                                        </form>
+                                        <form method="POST" action="{{ route('admin.seasons.activate', [$club, $season]) }}" class="inline">@csrf<button class="text-emerald-400 hover:text-emerald-300 font-medium">Activate</button></form>
                                     @endif
                                 </td>
                             </tr>

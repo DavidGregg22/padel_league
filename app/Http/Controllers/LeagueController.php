@@ -2,27 +2,44 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Club;
 use App\Models\Season;
 
 class LeagueController extends Controller
 {
-    public function index()
+    /** Landing — show the user's clubs, or redirect if only one. */
+    public function home()
     {
-        $season = Season::where('active', true)->first();
-        $singlesStandings = $season ? $season->singlesStandings() : [];
-        $doublesStandings = $season ? $season->doublesStandings() : [];
-        $seasons = Season::orderBy('year', 'desc')->get();
+        $clubs = auth()->user()->clubs()->orderBy('name')->get();
 
-        return view('league.index', compact('season', 'singlesStandings', 'doublesStandings', 'seasons'));
+        if ($clubs->count() === 1) {
+            return redirect()->route('club.league', $clubs->first());
+        }
+
+        return view('league.home', compact('clubs'));
     }
 
-    public function season(Season $season)
+    /** Main standings page for a club. */
+    public function index(Club $club)
     {
+        $season = $club->activeSeason();
+        $seasons = $club->seasons()->orderBy('year', 'desc')->get();
+        $singlesStandings = $season ? $season->singlesStandings() : [];
+        $doublesStandings = $season ? $season->doublesStandings() : [];
+
+        return view('league.index', compact('club', 'season', 'seasons', 'singlesStandings', 'doublesStandings'));
+    }
+
+    /** Full season detail for a club. */
+    public function season(Club $club, Season $season)
+    {
+        abort_unless($season->club_id === $club->id, 404);
+
         $singlesStandings = $season->singlesStandings();
         $doublesStandings = $season->doublesStandings();
         $singlesMatches = $season->singlesMatches()->with(['player1', 'player2'])->latest('played_at')->get();
         $doublesMatches = $season->doublesMatches()->with(['pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2'])->latest('played_at')->get();
 
-        return view('league.season', compact('season', 'singlesStandings', 'doublesStandings', 'singlesMatches', 'doublesMatches'));
+        return view('league.season', compact('club', 'season', 'singlesStandings', 'doublesStandings', 'singlesMatches', 'doublesMatches'));
     }
 }

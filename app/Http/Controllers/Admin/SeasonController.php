@@ -3,74 +3,82 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Club;
 use App\Models\DoublePair;
 use App\Models\Season;
-use App\Models\User;
 use Illuminate\Http\Request;
 
 class SeasonController extends Controller
 {
-    public function index()
+    public function index(Club $club)
     {
-        $seasons = Season::orderBy('year', 'desc')->get();
+        $seasons = $club->seasons()->orderBy('year', 'desc')->get();
 
-        return view('admin.seasons.index', compact('seasons'));
+        return view('admin.seasons.index', compact('club', 'seasons'));
     }
 
-    public function create()
+    public function create(Club $club)
     {
-        return view('admin.seasons.create');
+        return view('admin.seasons.create', compact('club'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, Club $club)
     {
         $data = $request->validate([
             'name' => 'required|string|max:100',
             'year' => 'required|integer|min:2000|max:2100',
         ]);
 
-        $season = Season::create($data);
+        $season = $club->seasons()->create($data);
 
-        return redirect()->route('admin.seasons.show', $season)->with('success', 'Season created.');
+        return redirect()->route('admin.seasons.show', [$club, $season])->with('success', 'Season created.');
     }
 
-    public function show(Season $season)
+    public function show(Club $club, Season $season)
     {
+        abort_unless($season->club_id === $club->id, 404);
+
         $pairs = DoublePair::where('season_id', $season->id)->with(['player1', 'player2'])->get();
-        $players = User::where('is_admin', false)->get();
+        $players = $club->users()->orderBy('name')->get();
         $singlesMatches = $season->singlesMatches()->with(['player1', 'player2'])->latest('played_at')->get();
         $doublesMatches = $season->doublesMatches()->with(['pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2'])->latest('played_at')->get();
 
-        return view('admin.seasons.show', compact('season', 'pairs', 'players', 'singlesMatches', 'doublesMatches'));
+        return view('admin.seasons.show', compact('club', 'season', 'pairs', 'players', 'singlesMatches', 'doublesMatches'));
     }
 
-    public function activate(Season $season)
+    public function activate(Club $club, Season $season)
     {
-        Season::query()->update(['active' => false]);
+        abort_unless($season->club_id === $club->id, 404);
+
+        $club->seasons()->update(['active' => false]);
         $season->update(['active' => true]);
 
         return back()->with('success', 'Season activated.');
     }
 
-    public function destroy(Season $season)
+    public function destroy(Club $club, Season $season)
     {
+        abort_unless($season->club_id === $club->id, 404);
+
         $season->delete();
 
-        return redirect()->route('admin.seasons.index')->with('success', 'Season deleted.');
+        return redirect()->route('admin.seasons.index', $club)->with('success', 'Season deleted.');
     }
 
-    public function randomizePairs(Season $season)
+    public function randomizePairs(Club $club, Season $season)
     {
+        abort_unless($season->club_id === $club->id, 404);
+
         DoublePair::where('season_id', $season->id)->delete();
 
-        $players = User::where('is_admin', false)->get()->shuffle();
+        $players = $club->users()->get()->shuffle();
 
-        foreach ($players->chunk(2) as $pair) {
-            if ($pair->count() === 2) {
+        foreach ($players->chunk(2) as $chunk) {
+            if ($chunk->count() === 2) {
                 DoublePair::create([
                     'season_id' => $season->id,
-                    'player1_id' => $pair->first()->id,
-                    'player2_id' => $pair->last()->id,
+                    'player1_id' => $chunk->first()->id,
+                    'player2_id' => $chunk->last()->id,
                 ]);
             }
         }
@@ -78,15 +86,19 @@ class SeasonController extends Controller
         return back()->with('success', 'Pairs randomized.');
     }
 
-    public function editPair(Season $season, DoublePair $pair)
+    public function editPair(Club $club, Season $season, DoublePair $pair)
     {
-        $players = User::where('is_admin', false)->get();
+        abort_unless($season->club_id === $club->id, 404);
 
-        return view('admin.seasons.edit_pair', compact('season', 'pair', 'players'));
+        $players = $club->users()->orderBy('name')->get();
+
+        return view('admin.seasons.edit_pair', compact('club', 'season', 'pair', 'players'));
     }
 
-    public function updatePair(Request $request, Season $season, DoublePair $pair)
+    public function updatePair(Request $request, Club $club, Season $season, DoublePair $pair)
     {
+        abort_unless($season->club_id === $club->id, 404);
+
         $data = $request->validate([
             'player1_id' => 'required|exists:users,id|different:player2_id',
             'player2_id' => 'required|exists:users,id',
@@ -94,18 +106,22 @@ class SeasonController extends Controller
 
         $pair->update($data);
 
-        return redirect()->route('admin.seasons.show', $season)->with('success', 'Pair updated.');
+        return redirect()->route('admin.seasons.show', [$club, $season])->with('success', 'Pair updated.');
     }
 
-    public function destroyPair(Season $season, DoublePair $pair)
+    public function destroyPair(Club $club, Season $season, DoublePair $pair)
     {
+        abort_unless($season->club_id === $club->id, 404);
+
         $pair->delete();
 
         return back()->with('success', 'Pair removed.');
     }
 
-    public function storePair(Request $request, Season $season)
+    public function storePair(Request $request, Club $club, Season $season)
     {
+        abort_unless($season->club_id === $club->id, 404);
+
         $data = $request->validate([
             'player1_id' => 'required|exists:users,id|different:player2_id',
             'player2_id' => 'required|exists:users,id',

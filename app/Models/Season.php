@@ -6,7 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Season extends Model
 {
-    protected $fillable = ['name', 'year', 'active'];
+    protected $fillable = ['club_id', 'name', 'year', 'active'];
+
+    public function club()
+    {
+        return $this->belongsTo(Club::class);
+    }
 
     public function doublePairs()
     {
@@ -23,41 +28,40 @@ class Season extends Model
         return $this->hasMany(DoublesMatch::class);
     }
 
-    public function singlesStandings()
+    public function singlesStandings(): array
     {
-        $players = User::all();
+        // Only players who belong to this club
+        $playerIds = $this->club->users()->pluck('users.id');
         $standings = [];
 
-        foreach ($players as $player) {
-            $won = SinglesMatch::where('season_id', $this->id)
-                ->where(function ($q) use ($player) {
-                    $q->where('player1_id', $player->id)->whereColumn('score1', '>', 'score2')
-                        ->orWhere('player2_id', $player->id)->whereColumn('score2', '>', 'score1');
-                })->whereNotNull('score1')->count();
-
-            $drawn = SinglesMatch::where('season_id', $this->id)
-                ->where(function ($q) use ($player) {
-                    $q->where('player1_id', $player->id)->orWhere('player2_id', $player->id);
-                })->whereNotNull('score1')->whereColumn('score1', 'score2')->count();
+        foreach ($playerIds as $playerId) {
+            $player = User::find($playerId);
 
             $played = SinglesMatch::where('season_id', $this->id)
-                ->where(function ($q) use ($player) {
-                    $q->where('player1_id', $player->id)->orWhere('player2_id', $player->id);
-                })->whereNotNull('score1')->count();
+                ->where(fn ($q) => $q->where('player1_id', $playerId)->orWhere('player2_id', $playerId))
+                ->whereNotNull('score1')->count();
 
-            $lost = $played - $won - $drawn;
-            $points = ($won * 3) + $drawn;
-
-            if ($played > 0) {
-                $standings[] = [
-                    'player' => $player,
-                    'played' => $played,
-                    'won' => $won,
-                    'drawn' => $drawn,
-                    'lost' => $lost,
-                    'points' => $points,
-                ];
+            if ($played === 0) {
+                continue;
             }
+
+            $won = SinglesMatch::where('season_id', $this->id)
+                ->where(fn ($q) => $q->where('player1_id', $playerId)->whereColumn('score1', '>', 'score2')
+                    ->orWhere('player2_id', $playerId)->whereColumn('score2', '>', 'score1'))
+                ->whereNotNull('score1')->count();
+
+            $drawn = SinglesMatch::where('season_id', $this->id)
+                ->where(fn ($q) => $q->where('player1_id', $playerId)->orWhere('player2_id', $playerId))
+                ->whereNotNull('score1')->whereColumn('score1', 'score2')->count();
+
+            $standings[] = [
+                'player' => $player,
+                'played' => $played,
+                'won' => $won,
+                'drawn' => $drawn,
+                'lost' => $played - $won - $drawn,
+                'points' => ($won * 3) + $drawn,
+            ];
         }
 
         usort($standings, fn ($a, $b) => $b['points'] <=> $a['points']);
@@ -65,38 +69,32 @@ class Season extends Model
         return $standings;
     }
 
-    public function doublesStandings()
+    public function doublesStandings(): array
     {
         $pairs = DoublePair::where('season_id', $this->id)->with(['player1', 'player2'])->get();
         $standings = [];
 
         foreach ($pairs as $pair) {
+            $played = DoublesMatch::where('season_id', $this->id)
+                ->where(fn ($q) => $q->where('pair1_id', $pair->id)->orWhere('pair2_id', $pair->id))
+                ->whereNotNull('score1')->count();
+
             $won = DoublesMatch::where('season_id', $this->id)
-                ->where(function ($q) use ($pair) {
-                    $q->where('pair1_id', $pair->id)->whereColumn('score1', '>', 'score2')
-                        ->orWhere('pair2_id', $pair->id)->whereColumn('score2', '>', 'score1');
-                })->whereNotNull('score1')->count();
+                ->where(fn ($q) => $q->where('pair1_id', $pair->id)->whereColumn('score1', '>', 'score2')
+                    ->orWhere('pair2_id', $pair->id)->whereColumn('score2', '>', 'score1'))
+                ->whereNotNull('score1')->count();
 
             $drawn = DoublesMatch::where('season_id', $this->id)
-                ->where(function ($q) use ($pair) {
-                    $q->where('pair1_id', $pair->id)->orWhere('pair2_id', $pair->id);
-                })->whereNotNull('score1')->whereColumn('score1', 'score2')->count();
-
-            $played = DoublesMatch::where('season_id', $this->id)
-                ->where(function ($q) use ($pair) {
-                    $q->where('pair1_id', $pair->id)->orWhere('pair2_id', $pair->id);
-                })->whereNotNull('score1')->count();
-
-            $lost = $played - $won - $drawn;
-            $points = ($won * 3) + $drawn;
+                ->where(fn ($q) => $q->where('pair1_id', $pair->id)->orWhere('pair2_id', $pair->id))
+                ->whereNotNull('score1')->whereColumn('score1', 'score2')->count();
 
             $standings[] = [
                 'pair' => $pair,
                 'played' => $played,
                 'won' => $won,
                 'drawn' => $drawn,
-                'lost' => $lost,
-                'points' => $points,
+                'lost' => $played - $won - $drawn,
+                'points' => ($won * 3) + $drawn,
             ];
         }
 

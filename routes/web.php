@@ -1,52 +1,74 @@
 <?php
 
+use App\Http\Controllers\Admin\ClubController;
 use App\Http\Controllers\Admin\MatchController;
-use App\Http\Controllers\Admin\PlayerController;
 use App\Http\Controllers\Admin\SeasonController;
+use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\LeagueController;
 use Illuminate\Support\Facades\Route;
 
-// Public league views
-Route::get('/', [LeagueController::class, 'index'])->name('home');
-Route::get('/season/{season}', [LeagueController::class, 'season'])->name('league.season');
+// Invitation accept (public — user may not have account yet)
+Route::get('/invite/{token}', [InvitationController::class, 'show'])->name('invite.accept');
+Route::post('/invite/{token}', [InvitationController::class, 'accept']);
 
-// Admin routes — auth + admin middleware
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+// Authenticated users only
+Route::middleware('auth')->group(function () {
 
-    // Players
-    Route::get('players', [PlayerController::class, 'index'])->name('players.index');
-    Route::get('players/create', [PlayerController::class, 'create'])->name('players.create');
-    Route::post('players', [PlayerController::class, 'store'])->name('players.store');
-    Route::get('players/{player}/edit', [PlayerController::class, 'edit'])->name('players.edit');
-    Route::patch('players/{player}', [PlayerController::class, 'update'])->name('players.update');
-    Route::delete('players/{player}', [PlayerController::class, 'destroy'])->name('players.destroy');
+    // Club selection landing (if member of multiple clubs)
+    Route::get('/', [LeagueController::class, 'home'])->name('home');
 
-    // Seasons
-    Route::get('seasons', [SeasonController::class, 'index'])->name('seasons.index');
-    Route::get('seasons/create', [SeasonController::class, 'create'])->name('seasons.create');
-    Route::post('seasons', [SeasonController::class, 'store'])->name('seasons.store');
-    Route::get('seasons/{season}', [SeasonController::class, 'show'])->name('seasons.show');
-    Route::post('seasons/{season}/activate', [SeasonController::class, 'activate'])->name('seasons.activate');
-    Route::delete('seasons/{season}', [SeasonController::class, 'destroy'])->name('seasons.destroy');
-    Route::post('seasons/{season}/randomize-pairs', [SeasonController::class, 'randomizePairs'])->name('seasons.randomize-pairs');
-    Route::get('seasons/{season}/pairs/{pair}/edit', [SeasonController::class, 'editPair'])->name('seasons.pairs.edit');
-    Route::patch('seasons/{season}/pairs/{pair}', [SeasonController::class, 'updatePair'])->name('seasons.pairs.update');
-    Route::delete('seasons/{season}/pairs/{pair}', [SeasonController::class, 'destroyPair'])->name('seasons.pairs.destroy');
-    Route::post('seasons/{season}/pairs', [SeasonController::class, 'storePair'])->name('seasons.pairs.store');
+    // Club league views — any member of the club
+    Route::middleware('club.member')->prefix('clubs/{club}')->name('club.')->group(function () {
+        Route::get('/', [LeagueController::class, 'index'])->name('league');
+        Route::get('/season/{season}', [LeagueController::class, 'season'])->name('season');
+    });
 
-    // Singles matches
-    Route::get('seasons/{season}/singles/create', [MatchController::class, 'createSingles'])->name('matches.singles.create');
-    Route::post('seasons/{season}/singles', [MatchController::class, 'storeSingles'])->name('matches.singles.store');
-    Route::get('seasons/{season}/singles/{match}/edit', [MatchController::class, 'editSingles'])->name('matches.singles.edit');
-    Route::patch('seasons/{season}/singles/{match}', [MatchController::class, 'updateSingles'])->name('matches.singles.update');
-    Route::delete('seasons/{season}/singles/{match}', [MatchController::class, 'destroySingles'])->name('matches.singles.destroy');
+    // Club admin panel — must be club admin
+    Route::middleware('club.admin')->prefix('clubs/{club}/admin')->name('admin.')->group(function () {
 
-    // Doubles matches
-    Route::get('seasons/{season}/doubles/create', [MatchController::class, 'createDoubles'])->name('matches.doubles.create');
-    Route::post('seasons/{season}/doubles', [MatchController::class, 'storeDoubles'])->name('matches.doubles.store');
-    Route::get('seasons/{season}/doubles/{match}/edit', [MatchController::class, 'editDoubles'])->name('matches.doubles.edit');
-    Route::patch('seasons/{season}/doubles/{match}', [MatchController::class, 'updateDoubles'])->name('matches.doubles.update');
-    Route::delete('seasons/{season}/doubles/{match}', [MatchController::class, 'destroyDoubles'])->name('matches.doubles.destroy');
+        // Members & invitations
+        Route::get('members', [ClubController::class, 'inviteIndex'])->name('members');
+        Route::post('members/invite', [ClubController::class, 'inviteStore'])->name('members.invite');
+        Route::delete('members/invite/{invitation}', [ClubController::class, 'inviteDestroy'])->name('members.invite.destroy');
+        Route::delete('members/{user}', [ClubController::class, 'removeMember'])->name('members.remove');
+        Route::patch('members/{user}/promote', [ClubController::class, 'promoteMember'])->name('members.promote');
+        Route::patch('members/{user}/demote', [ClubController::class, 'demoteMember'])->name('members.demote');
+
+        // Seasons
+        Route::get('seasons', [SeasonController::class, 'index'])->name('seasons.index');
+        Route::get('seasons/create', [SeasonController::class, 'create'])->name('seasons.create');
+        Route::post('seasons', [SeasonController::class, 'store'])->name('seasons.store');
+        Route::get('seasons/{season}', [SeasonController::class, 'show'])->name('seasons.show');
+        Route::post('seasons/{season}/activate', [SeasonController::class, 'activate'])->name('seasons.activate');
+        Route::delete('seasons/{season}', [SeasonController::class, 'destroy'])->name('seasons.destroy');
+        Route::post('seasons/{season}/randomize-pairs', [SeasonController::class, 'randomizePairs'])->name('seasons.randomize-pairs');
+        Route::get('seasons/{season}/pairs/{pair}/edit', [SeasonController::class, 'editPair'])->name('seasons.pairs.edit');
+        Route::patch('seasons/{season}/pairs/{pair}', [SeasonController::class, 'updatePair'])->name('seasons.pairs.update');
+        Route::delete('seasons/{season}/pairs/{pair}', [SeasonController::class, 'destroyPair'])->name('seasons.pairs.destroy');
+        Route::post('seasons/{season}/pairs', [SeasonController::class, 'storePair'])->name('seasons.pairs.store');
+
+        // Singles matches
+        Route::get('seasons/{season}/singles/create', [MatchController::class, 'createSingles'])->name('matches.singles.create');
+        Route::post('seasons/{season}/singles', [MatchController::class, 'storeSingles'])->name('matches.singles.store');
+        Route::get('seasons/{season}/singles/{match}/edit', [MatchController::class, 'editSingles'])->name('matches.singles.edit');
+        Route::patch('seasons/{season}/singles/{match}', [MatchController::class, 'updateSingles'])->name('matches.singles.update');
+        Route::delete('seasons/{season}/singles/{match}', [MatchController::class, 'destroySingles'])->name('matches.singles.destroy');
+
+        // Doubles matches
+        Route::get('seasons/{season}/doubles/create', [MatchController::class, 'createDoubles'])->name('matches.doubles.create');
+        Route::post('seasons/{season}/doubles', [MatchController::class, 'storeDoubles'])->name('matches.doubles.store');
+        Route::get('seasons/{season}/doubles/{match}/edit', [MatchController::class, 'editDoubles'])->name('matches.doubles.edit');
+        Route::patch('seasons/{season}/doubles/{match}', [MatchController::class, 'updateDoubles'])->name('matches.doubles.update');
+        Route::delete('seasons/{season}/doubles/{match}', [MatchController::class, 'destroyDoubles'])->name('matches.doubles.destroy');
+    });
+
+    // Super-admin — manage clubs themselves
+    Route::middleware('admin')->prefix('super')->name('super.')->group(function () {
+        Route::get('clubs', [ClubController::class, 'index'])->name('clubs.index');
+        Route::get('clubs/create', [ClubController::class, 'create'])->name('clubs.create');
+        Route::post('clubs', [ClubController::class, 'store'])->name('clubs.store');
+        Route::delete('clubs/{club}', [ClubController::class, 'destroy'])->name('clubs.destroy');
+    });
 });
 
 require __DIR__.'/auth.php';

@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\ClubAdminMiddleware;
+use App\Http\Middleware\ClubMemberMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -14,6 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'admin' => AdminMiddleware::class,
+            'club.admin' => ClubAdminMiddleware::class,
+            'club.member' => ClubMemberMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
