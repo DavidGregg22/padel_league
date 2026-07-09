@@ -1,0 +1,1 @@
+1	Admin Test	admin@padel.local	2026-07-08 21:52:07.000	$2y$12$z1NIp1as0Qq/accpXBveheIKVDL9SrKPkxCc5ULdJctqAlPtKhnGq		2026-07-08 21:52:07.000	2026-07-08 21:53:07.000	true
