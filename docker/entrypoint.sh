@@ -1,6 +1,7 @@
 #!/bin/sh
-mkdir -p /var/log/supervisor
 set -e
+
+mkdir -p /var/log/supervisor
 
 # Copy .env if it doesn't exist
 if [ ! -f /var/www/html/.env ]; then
