@@ -4,14 +4,14 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:80"
+      - "${APP_PORT:-8080}:80"
     volumes:
       - db_data:/var/www/html/database
       - storage_data:/var/www/html/storage
     environment:
       APP_ENV: production
       APP_DEBUG: "false"
-      APP_URL: http://localhost:8080
+      APP_URL: http://${PUBLIC_HOST:-localhost}:${APP_PORT:-8080}
     restart: unless-stopped
 
 volumes:
