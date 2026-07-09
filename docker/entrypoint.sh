@@ -1,4 +1,5 @@
 #!/bin/sh
+mkdir -p /var/log/supervisor
 set -e
 
 # Copy .env if it doesn't exist
