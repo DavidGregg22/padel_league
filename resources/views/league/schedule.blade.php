@@ -7,25 +7,22 @@
     </x-slot>
 
     <div class="py-6">
-        <div class="max-w-4xl mx-auto px-4 space-y-6">
+        <div class="max-w-6xl mx-auto px-4 space-y-6">
 
-            @if(session('success'))
-                <div class="bg-emerald-900/50 text-emerald-300 border border-emerald-700 px-4 py-3 rounded-md text-sm">{{ session('success') }}</div>
-            @endif
-
-            {{-- Who's available when --}}
+            {{-- Who's Free (always at top) --}}
             <div class="bg-blue-900 rounded-lg shadow p-5">
-                <h3 class="font-bold text-blue-100 mb-4">Who's Free</h3>
-                <div class="space-y-3">
+                <h3 class="font-bold text-blue-100 mb-3">Who's Free</h3>
+                <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
                     @php $hasAny = false; @endphp
                     @foreach($dates as $date)
+                        @if(\Carbon\Carbon::parse($date)->lt($now)) @continue @endif
                         @php $available = $allAvailability->get($date, collect()); @endphp
                         @if($available->count() > 0)
                             @php $hasAny = true; @endphp
                             <div class="bg-blue-800/50 rounded-lg px-4 py-3">
-                                <div class="flex items-center justify-between mb-1">
+                                <div class="flex items-center justify-between mb-1.5">
                                     <span class="text-sm font-medium text-white">{{ date('D j M', strtotime($date)) }}</span>
-                                    <span class="text-xs text-blue-400">{{ $available->count() }} available</span>
+                                    <span class="text-xs text-blue-400">{{ $available->count() }} {{ $available->count() === 1 ? 'player' : 'players' }}</span>
                                 </div>
                                 <div class="flex flex-wrap gap-1">
                                     @foreach($available as $a)
@@ -36,7 +33,7 @@
                         @endif
                     @endforeach
                     @if(!$hasAny)
-                        <p class="text-blue-400 text-sm text-center py-4">No one has marked availability yet. Be the first!</p>
+                        <p class="text-blue-400 text-sm text-center py-4">No availability marked this month yet.</p>
                     @endif
                 </div>
             </div>
@@ -44,51 +41,98 @@
             {{-- Suggested Matches --}}
             @if(count($suggestions) > 0)
             <div class="bg-blue-900 rounded-lg shadow p-5">
-                <h3 class="font-bold text-blue-100 mb-1">🎯 Ready to Schedule</h3>
-                <p class="text-blue-400 text-xs mb-4">These pending matches have all players available on the same date.</p>
-                <div class="space-y-2">
+                <h3 class="font-bold text-blue-100 mb-1">🎯 Ready to Play</h3>
+                <p class="text-blue-400 text-xs mb-3">Pending matches where all players are free on the same day.</p>
+                <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
                     @foreach($suggestions as $s)
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between bg-blue-800/50 rounded-lg px-4 py-3 gap-2">
-                            <div class="flex-1 min-w-0">
-                                <span class="text-sm text-white font-medium block sm:inline">{{ $s['label'] }}</span>
-                                <span class="text-xs {{ $s['type'] === 'singles' ? 'text-teal-400' : 'text-amber-400' }} sm:ml-2">{{ ucfirst($s['type']) }}</span>
+                        <div class="bg-blue-800/50 rounded-lg px-4 py-3">
+                            <div class="text-sm text-white font-medium">{{ $s['label'] }}</div>
+                            <div class="flex items-center justify-between mt-1.5">
+                                <span class="text-xs {{ $s['type'] === 'singles' ? 'text-teal-400' : 'text-amber-400' }}">{{ ucfirst($s['type']) }}</span>
+                                <span class="text-xs text-emerald-400 bg-emerald-900/50 px-2 py-0.5 rounded">{{ date('D j M', strtotime($s['date'])) }}</span>
                             </div>
-                            <span class="text-xs text-emerald-400 bg-emerald-900/50 px-2 py-0.5 rounded shrink-0 self-start sm:self-auto">
-                                {{ date('D j M', strtotime($s['date'])) }}
-                            </span>
                         </div>
                     @endforeach
                 </div>
             </div>
             @endif
 
-            {{-- My Availability --}}
-            <div class="bg-blue-900 rounded-lg shadow p-5">
-                <h3 class="font-bold text-blue-100 mb-1">My Availability</h3>
-                <p class="text-blue-400 text-xs mb-4">Tap dates you're free to play. Others can see when you're available.</p>
+            {{-- Calendar --}}
+            <div class="bg-blue-900 rounded-lg shadow p-5 sm:p-6">
+                <div class="flex items-center justify-between mb-6">
+                    @if($canGoPrev)
+                        <a href="{{ route('club.schedule', $club) }}?month={{ $prevMonth->format('Y-m') }}"
+                           class="text-blue-300 hover:text-white p-2 rounded-md bg-blue-800 hover:bg-blue-700 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        </a>
+                    @else
+                        <span class="p-2 text-blue-800"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></span>
+                    @endif
 
-                <div class="grid grid-cols-4 sm:grid-cols-7 gap-2">
+                    <h3 class="font-bold text-white text-xl">{{ $monthStart->format('F Y') }}</h3>
+
+                    @if($canGoNext)
+                        <a href="{{ route('club.schedule', $club) }}?month={{ $nextMonth->format('Y-m') }}"
+                           class="text-blue-300 hover:text-white p-2 rounded-md bg-blue-800 hover:bg-blue-700 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </a>
+                    @else
+                        <span class="p-2 text-blue-800"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></span>
+                    @endif
+                </div>
+
+                {{-- Day headers --}}
+                <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem;" class="mb-2">
+                    @foreach(['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] as $day)
+                        <div class="text-center text-xs font-semibold text-blue-400 uppercase tracking-wide py-1">{{ $day }}</div>
+                    @endforeach
+                </div>
+
+                {{-- Calendar grid --}}
+                <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem;">
+                    @for($i = 0; $i < $startPadding; $i++)
+                        <div style="height: 3.5rem;"></div>
+                    @endfor
+
                     @foreach($dates as $date)
                         @php
                             $isAvailable = in_array($date, $myAvailability);
-                            $dayName = date('D', strtotime($date));
+                            $isPast = \Carbon\Carbon::parse($date)->lt($now);
                             $dayNum = date('j', strtotime($date));
-                            $monthName = date('M', strtotime($date));
+                            $availableCount = $allAvailability->get($date, collect())->count();
+                            $isToday = $date === $now->toDateString();
                         @endphp
-                        <form method="POST" action="{{ route('club.schedule.toggle', $club) }}">
-                            @csrf
-                            <input type="hidden" name="date" value="{{ $date }}">
-                            <button type="submit"
-                                class="w-full rounded-lg py-3 px-1 text-center transition-colors min-h-[72px]
-                                       {{ $isAvailable
-                                           ? 'bg-teal-600 text-white border-2 border-teal-400'
-                                           : 'bg-blue-800 text-blue-400 border-2 border-blue-700 hover:border-blue-500 active:bg-blue-700' }}">
-                                <div class="text-xs font-medium">{{ $dayName }}</div>
-                                <div class="text-lg font-bold leading-tight">{{ $dayNum }}</div>
-                                <div class="text-xs">{{ $monthName }}</div>
-                            </button>
-                        </form>
+
+                        @if($isPast)
+                            <div class="flex flex-col items-center justify-center rounded-lg opacity-25" style="height: 3.5rem;">
+                                <span class="text-sm text-blue-500">{{ $dayNum }}</span>
+                            </div>
+                        @else
+                            <form method="POST" action="{{ route('club.schedule.toggle', $club) }}" style="height: 3.5rem;">
+                                @csrf
+                                <input type="hidden" name="date" value="{{ $date }}">
+                                <button type="submit" style="width: 100%; height: 100%;"
+                                    class="flex flex-col items-center justify-center rounded-lg transition-all
+                                           {{ $isAvailable
+                                               ? 'bg-teal-600 text-white ring-2 ring-teal-400 shadow-md'
+                                               : 'bg-blue-800/80 text-blue-200 ring-1 ring-blue-700 hover:ring-blue-500 hover:bg-blue-800 active:bg-blue-700' }}
+                                           {{ $isToday && !$isAvailable ? '!ring-2 !ring-amber-400' : '' }}
+                                           {{ $isToday && $isAvailable ? '!ring-amber-400' : '' }}">
+                                    <span class="text-sm font-bold">{{ $dayNum }}</span>
+                                    @if($availableCount > 0)
+                                        <span class="text-[10px] mt-0.5 {{ $isAvailable ? 'text-teal-200' : 'text-teal-400' }}">{{ $availableCount }} free</span>
+                                    @endif
+                                </button>
+                            </form>
+                        @endif
                     @endforeach
+                </div>
+
+                {{-- Legend --}}
+                <div class="mt-5 pt-4 border-t border-blue-800 flex flex-wrap gap-x-5 gap-y-2 text-xs text-blue-400">
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-teal-600 ring-2 ring-teal-400 inline-block"></span> You're free</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-blue-800 ring-1 ring-blue-700 inline-block"></span> Tap to mark free</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-blue-800 ring-2 ring-amber-400 inline-block"></span> Today</span>
                 </div>
             </div>
 

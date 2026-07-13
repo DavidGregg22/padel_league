@@ -5,51 +5,79 @@ namespace App\Http\Controllers;
 use App\Models\Availability;
 use App\Models\Club;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class AvailabilityController extends Controller
 {
-    /** Show scheduling page: my availability + suggested matches. */
-    public function index(Club $club)
+    /** Show scheduling page with month calendar. */
+    public function index(Request $request, Club $club)
     {
         $season = $club->activeSeason();
         $user = auth()->user();
 
-        // Next 14 days
-        $dates = collect();
-        for ($i = 0; $i < 14; $i++) {
-            $dates->push(now()->addDays($i)->toDateString());
+        // Determine which month to show (default: current)
+        $now = Carbon::today();
+        $requestedMonth = $request->query('month'); // format: Y-m
+        if ($requestedMonth && preg_match('/^\d{4}-\d{2}$/', $requestedMonth)) {
+            $monthStart = Carbon::createFromFormat('Y-m', $requestedMonth)->startOfMonth();
+        } else {
+            $monthStart = $now->copy()->startOfMonth();
         }
 
-        // Current user's availability
+        // Can't go before current month
+        $currentMonthStart = $now->copy()->startOfMonth();
+        if ($monthStart->lt($currentMonthStart)) {
+            $monthStart = $currentMonthStart;
+        }
+
+        // Can't go more than 12 months forward
+        $maxMonth = $now->copy()->addMonths(11)->startOfMonth();
+        if ($monthStart->gt($maxMonth)) {
+            $monthStart = $maxMonth;
+        }
+
+        $monthEnd = $monthStart->copy()->endOfMonth();
+
+        // Build calendar dates for the month
+        $dates = collect();
+        $day = $monthStart->copy();
+        while ($day->lte($monthEnd)) {
+            $dates->push($day->toDateString());
+            $day->addDay();
+        }
+
+        // Pad start to align with day of week (Monday = 0)
+        $startPadding = ($monthStart->dayOfWeekIso - 1);
+
+        // Current user's availability for this month
         $myAvailability = Availability::where('club_id', $club->id)
             ->where('user_id', $user->id)
-            ->whereBetween('available_date', [now()->toDateString(), now()->addDays(13)->toDateString()])
+            ->whereBetween('available_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->pluck('available_date')
             ->map(fn ($d) => $d->toDateString())
             ->toArray();
 
-        // Everyone's availability for the next 14 days
+        // Everyone's availability for this month
         $allAvailability = Availability::where('club_id', $club->id)
-            ->whereBetween('available_date', [now()->toDateString(), now()->addDays(13)->toDateString()])
+            ->whereBetween('available_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->with('user')
             ->get()
             ->groupBy(fn ($a) => $a->available_date->toDateString());
 
-        // Find suggested matches (pending fixtures where both sides are available on same date)
+        // Suggested matches
         $suggestions = [];
-
         if ($season) {
-            // Singles
             $singlesFixtures = $season->singlesFixtures();
             foreach ($singlesFixtures as $fixture) {
                 if ($fixture['played']) {
                     continue;
                 }
                 foreach ($dates as $date) {
+                    if (Carbon::parse($date)->lt($now)) {
+                        continue;
+                    }
                     $available = $allAvailability->get($date, collect());
-                    $p1Free = $available->contains('user_id', $fixture['player1']->id);
-                    $p2Free = $available->contains('user_id', $fixture['player2']->id);
-                    if ($p1Free && $p2Free) {
+                    if ($available->contains('user_id', $fixture['player1']->id) && $available->contains('user_id', $fixture['player2']->id)) {
                         $suggestions[] = [
                             'type' => 'singles',
                             'date' => $date,
@@ -59,21 +87,20 @@ class AvailabilityController extends Controller
                 }
             }
 
-            // Doubles
             $doublesFixtures = $season->doublesFixtures();
             foreach ($doublesFixtures as $fixture) {
                 if ($fixture['played']) {
                     continue;
                 }
                 foreach ($dates as $date) {
+                    if (Carbon::parse($date)->lt($now)) {
+                        continue;
+                    }
                     $available = $allAvailability->get($date, collect());
                     $availableIds = $available->pluck('user_id')->toArray();
-                    // All 4 players in both pairs must be free
                     $needed = [
-                        $fixture['pair1']->player1_id,
-                        $fixture['pair1']->player2_id,
-                        $fixture['pair2']->player1_id,
-                        $fixture['pair2']->player2_id,
+                        $fixture['pair1']->player1_id, $fixture['pair1']->player2_id,
+                        $fixture['pair2']->player1_id, $fixture['pair2']->player2_id,
                     ];
                     if (count(array_intersect($needed, $availableIds)) === 4) {
                         $suggestions[] = [
@@ -86,7 +113,17 @@ class AvailabilityController extends Controller
             }
         }
 
-        return view('league.schedule', compact('club', 'season', 'dates', 'myAvailability', 'allAvailability', 'suggestions'));
+        // Nav: prev/next month
+        $prevMonth = $monthStart->copy()->subMonth();
+        $nextMonth = $monthStart->copy()->addMonth();
+        $canGoPrev = $prevMonth->gte($currentMonthStart);
+        $canGoNext = $nextMonth->lte($maxMonth);
+
+        return view('league.schedule', compact(
+            'club', 'season', 'dates', 'startPadding', 'myAvailability',
+            'allAvailability', 'suggestions', 'monthStart', 'now',
+            'prevMonth', 'nextMonth', 'canGoPrev', 'canGoNext'
+        ));
     }
 
     /** Toggle a date on/off. */
@@ -103,16 +140,14 @@ class AvailabilityController extends Controller
 
         if ($existing) {
             $existing->delete();
-            $status = 'removed';
         } else {
             Availability::create([
                 'club_id' => $club->id,
                 'user_id' => auth()->id(),
                 'available_date' => $data['date'],
             ]);
-            $status = 'added';
         }
 
-        return back()->with('success', "Availability {$status} for ".date('D j M', strtotime($data['date'])));
+        return back();
     }
 }
