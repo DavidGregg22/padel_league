@@ -26,6 +26,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/season/{season}/fixtures', [LeagueController::class, 'fixtures'])->name('fixtures');
         Route::get('/schedule', [AvailabilityController::class, 'index'])->name('schedule');
         Route::post('/schedule', [AvailabilityController::class, 'toggle'])->name('schedule.toggle');
+        Route::get('/schedule/courts', [AvailabilityController::class, 'courts'])->name('schedule.courts');
     });
 
     // Club admin panel — must be club admin
@@ -73,6 +74,8 @@ Route::middleware('auth')->group(function () {
         Route::get('clubs', [ClubController::class, 'index'])->name('clubs.index');
         Route::get('clubs/create', [ClubController::class, 'create'])->name('clubs.create');
         Route::post('clubs', [ClubController::class, 'store'])->name('clubs.store');
+        Route::get('clubs/{club}/edit', [ClubController::class, 'edit'])->name('clubs.edit');
+        Route::patch('clubs/{club}', [ClubController::class, 'update'])->name('clubs.update');
         Route::delete('clubs/{club}', [ClubController::class, 'destroy'])->name('clubs.destroy');
     });
 });

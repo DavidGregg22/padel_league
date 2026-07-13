@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Availability;
 use App\Models\Club;
+use App\Services\PlaytomicService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
@@ -149,5 +150,19 @@ class AvailabilityController extends Controller
         }
 
         return back();
+    }
+
+    /** Fetch Playtomic court availability for a date. */
+    public function courts(Request $request, Club $club)
+    {
+        $date = $request->query('date', now()->toDateString());
+
+        if (! $club->playtomic_tenant_id) {
+            return response()->json(['error' => 'Playtomic not configured for this club.', 'slots' => []]);
+        }
+
+        $slots = PlaytomicService::getSlots($club->playtomic_tenant_id, $date);
+
+        return response()->json(['date' => $date, 'slots' => $slots]);
     }
 }

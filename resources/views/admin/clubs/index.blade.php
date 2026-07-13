@@ -16,7 +16,8 @@
                         <tr class="hover:bg-blue-800/40">
                             <td class="px-6 py-4 font-medium text-white">{{ $club->name }}</td>
                             <td class="px-6 py-4 text-center text-blue-300">{{ $club->users_count }}</td>
-                            <td class="px-6 py-4 text-right">
+                            <td class="px-6 py-4 text-right space-x-3">
+                                <a href="{{ route('super.clubs.edit', $club) }}" class="text-teal-400 hover:text-teal-300 text-xs font-medium">Edit</a>
                                 <form method="POST" action="{{ route('super.clubs.destroy', $club) }}" class="inline" onsubmit="return confirm('Delete club?')">@csrf @method('DELETE')<button class="text-red-400 hover:text-red-300 text-xs font-medium">Delete</button></form>
                             </td>
                         </tr>

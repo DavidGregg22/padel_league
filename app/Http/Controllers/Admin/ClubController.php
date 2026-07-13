@@ -30,12 +30,16 @@ class ClubController extends Controller
     {
         $data = $request->validate([
             'name' => 'required|string|max:100',
+            'playtomic_tenant_id' => 'nullable|string|max:100',
             'admin_name' => 'required|string|max:100',
             'admin_email' => 'required|email|unique:users,email',
             'admin_password' => 'required|string|min:8|confirmed',
         ]);
 
-        $club = Club::create(['name' => $data['name']]);
+        $club = Club::create([
+            'name' => $data['name'],
+            'playtomic_tenant_id' => $data['playtomic_tenant_id'] ?? null,
+        ]);
 
         $admin = User::create([
             'name' => $data['admin_name'],
@@ -53,6 +57,23 @@ class ClubController extends Controller
         $club->delete();
 
         return redirect()->route('super.clubs.index')->with('success', 'Club deleted.');
+    }
+
+    public function edit(Club $club)
+    {
+        return view('admin.clubs.edit', compact('club'));
+    }
+
+    public function update(Request $request, Club $club)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:100',
+            'playtomic_tenant_id' => 'nullable|string|max:100',
+        ]);
+
+        $club->update($data);
+
+        return redirect()->route('super.clubs.index')->with('success', "Club \"{$club->name}\" updated.");
     }
 
     // ── Invitation management (club-admin) ───────────────────

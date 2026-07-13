@@ -7,7 +7,7 @@ use Illuminate\Support\Str;
 
 class Club extends Model
 {
-    protected $fillable = ['name', 'slug'];
+    protected $fillable = ['name', 'slug', 'playtomic_tenant_id'];
 
     protected static function booted(): void
     {
