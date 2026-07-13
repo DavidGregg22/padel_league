@@ -34,7 +34,7 @@
                 </div>
             @else
                 {{-- Navigation tabs --}}
-                <div class="flex gap-2 mb-6">
+                <div class="flex gap-2 mb-6 flex-wrap">
                     <a href="{{ route('club.singles', [$club, $season]) }}"
                        class="px-4 py-2 rounded-md text-sm font-medium bg-teal-600 text-white hover:bg-teal-700 transition-colors">
                         Singles
@@ -42,6 +42,10 @@
                     <a href="{{ route('club.doubles', [$club, $season]) }}"
                        class="px-4 py-2 rounded-md text-sm font-medium bg-amber-500 text-white hover:bg-amber-600 transition-colors">
                         Doubles
+                    </a>
+                    <a href="{{ route('club.schedule', $club) }}"
+                       class="px-4 py-2 rounded-md text-sm font-medium bg-blue-700 text-blue-100 hover:bg-blue-600 transition-colors">
+                        📅 Schedule
                     </a>
                 </div>
 

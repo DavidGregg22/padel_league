@@ -62,7 +62,7 @@
                         <div class="flex flex-col bg-blue-800/50 rounded-lg px-4 py-3 {{ $fixture['played'] ? 'opacity-70' : '' }}"
                              x-data="{ showForm: false }">
                             <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-3 flex-1 min-w-0">
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 flex-1 min-w-0">
                                     <span class="font-medium text-white text-sm truncate">{{ $fixture['player1']->name }}</span>
                                     <span class="text-blue-400 text-xs shrink-0">vs</span>
                                     <span class="font-medium text-white text-sm truncate">{{ $fixture['player2']->name }}</span>
