@@ -47,6 +47,10 @@
                        class="px-4 py-2 rounded-md text-sm font-medium bg-blue-700 text-blue-100 hover:bg-blue-600 transition-colors">
                         📅 Schedule
                     </a>
+                    <a href="{{ route('club.export', [$club, $season]) }}"
+                       class="px-4 py-2 rounded-md text-sm font-medium bg-blue-800 text-blue-200 hover:bg-blue-700 transition-colors">
+                        📥 Export
+                    </a>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">

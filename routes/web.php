@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\ClubController;
 use App\Http\Controllers\Admin\MatchController;
 use App\Http\Controllers\Admin\SeasonController;
 use App\Http\Controllers\AvailabilityController;
+use App\Http\Controllers\ExportController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\LeagueController;
 use Illuminate\Support\Facades\Route;
@@ -27,6 +28,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/schedule', [AvailabilityController::class, 'index'])->name('schedule');
         Route::post('/schedule', [AvailabilityController::class, 'toggle'])->name('schedule.toggle');
         Route::get('/schedule/courts', [AvailabilityController::class, 'courts'])->name('schedule.courts');
+        Route::get('/season/{season}/export', [ExportController::class, 'season'])->name('export');
     });
 
     // Club admin panel — must be club admin
