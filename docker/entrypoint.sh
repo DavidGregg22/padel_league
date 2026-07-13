@@ -3,10 +3,7 @@ set -e
 
 mkdir -p /var/log/supervisor
 
-# Copy .env if it doesn't exist
-if [ ! -f /var/www/html/.env ]; then
-    cp /var/www/html/.env.example /var/www/html/.env
-fi
+# Use .env from the project (already copied in during build)
 
 cd /var/www/html
 
