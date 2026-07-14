@@ -7,6 +7,7 @@ RUN apk add --no-cache \
     npm \
     sqlite \
     sqlite-dev \
+    postgresql-dev \
     libpng-dev \
     libzip-dev \
     zip \
@@ -15,7 +16,7 @@ RUN apk add --no-cache \
     supervisor
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo pdo_sqlite gd zip
+RUN docker-php-ext-install pdo pdo_sqlite pdo_pgsql gd zip
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
