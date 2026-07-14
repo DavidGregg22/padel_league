@@ -36,30 +36,46 @@ class Season extends Model
         foreach ($playerIds as $playerId) {
             $player = User::find($playerId);
 
-            $played = SinglesMatch::where('season_id', $this->id)
+            $matches = SinglesMatch::where('season_id', $this->id)
                 ->where(fn ($q) => $q->where('player1_id', $playerId)->orWhere('player2_id', $playerId))
-                ->whereNotNull('score1')->count();
+                ->whereNotNull('score1')->get();
 
+            $played = $matches->count();
             if ($played === 0) {
                 continue;
             }
 
-            $won = SinglesMatch::where('season_id', $this->id)
-                ->where(fn ($q) => $q->where('player1_id', $playerId)->whereColumn('score1', '>', 'score2')
-                    ->orWhere('player2_id', $playerId)->whereColumn('score2', '>', 'score1'))
-                ->whereNotNull('score1')->count();
+            $won = 0;
+            $drawn = 0;
+            $gamesWon = 0;
 
-            $drawn = SinglesMatch::where('season_id', $this->id)
-                ->where(fn ($q) => $q->where('player1_id', $playerId)->orWhere('player2_id', $playerId))
-                ->whereNotNull('score1')->whereColumn('score1', 'score2')->count();
+            foreach ($matches as $match) {
+                $isP1 = $match->player1_id === $playerId;
+
+                if ($match->score1 === $match->score2) {
+                    $drawn++;
+                } elseif (($isP1 && $match->score1 > $match->score2) || (! $isP1 && $match->score2 > $match->score1)) {
+                    $won++;
+                }
+
+                // Count games won from sets
+                if ($match->sets) {
+                    foreach ($match->sets as $set) {
+                        $gamesWon += $isP1 ? $set['p1'] : $set['p2'];
+                    }
+                }
+            }
+
+            $lost = $played - $won - $drawn;
+            $matchPoints = ($won * 3) + ($drawn * 2) + $lost;
 
             $standings[] = [
                 'player' => $player,
                 'played' => $played,
                 'won' => $won,
                 'drawn' => $drawn,
-                'lost' => $played - $won - $drawn,
-                'points' => ($won * 3) + $drawn,
+                'lost' => $lost,
+                'points' => $matchPoints,
             ];
         }
 
@@ -74,26 +90,41 @@ class Season extends Model
         $standings = [];
 
         foreach ($pairs as $pair) {
-            $played = DoublesMatch::where('season_id', $this->id)
+            $matches = DoublesMatch::where('season_id', $this->id)
                 ->where(fn ($q) => $q->where('pair1_id', $pair->id)->orWhere('pair2_id', $pair->id))
-                ->whereNotNull('score1')->count();
+                ->whereNotNull('score1')->get();
 
-            $won = DoublesMatch::where('season_id', $this->id)
-                ->where(fn ($q) => $q->where('pair1_id', $pair->id)->whereColumn('score1', '>', 'score2')
-                    ->orWhere('pair2_id', $pair->id)->whereColumn('score2', '>', 'score1'))
-                ->whereNotNull('score1')->count();
+            $played = $matches->count();
+            $won = 0;
+            $drawn = 0;
+            $gamesWon = 0;
 
-            $drawn = DoublesMatch::where('season_id', $this->id)
-                ->where(fn ($q) => $q->where('pair1_id', $pair->id)->orWhere('pair2_id', $pair->id))
-                ->whereNotNull('score1')->whereColumn('score1', 'score2')->count();
+            foreach ($matches as $match) {
+                $isPr1 = $match->pair1_id === $pair->id;
+
+                if ($match->score1 === $match->score2) {
+                    $drawn++;
+                } elseif (($isPr1 && $match->score1 > $match->score2) || (! $isPr1 && $match->score2 > $match->score1)) {
+                    $won++;
+                }
+
+                if ($match->sets) {
+                    foreach ($match->sets as $set) {
+                        $gamesWon += $isPr1 ? $set['p1'] : $set['p2'];
+                    }
+                }
+            }
+
+            $lost = $played - $won - $drawn;
+            $matchPoints = ($won * 3) + ($drawn * 2) + $lost;
 
             $standings[] = [
                 'pair' => $pair,
                 'played' => $played,
                 'won' => $won,
                 'drawn' => $drawn,
-                'lost' => $played - $won - $drawn,
-                'points' => ($won * 3) + $drawn,
+                'lost' => $lost,
+                'points' => $matchPoints,
             ];
         }
 
