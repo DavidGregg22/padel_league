@@ -27,6 +27,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/season/{season}/fixtures', [LeagueController::class, 'fixtures'])->name('fixtures');
         Route::get('/schedule', [AvailabilityController::class, 'index'])->name('schedule');
         Route::post('/schedule', [AvailabilityController::class, 'toggle'])->name('schedule.toggle');
+        Route::post('/schedule/add', [AvailabilityController::class, 'store'])->name('schedule.store');
+        Route::patch('/schedule', [AvailabilityController::class, 'update'])->name('schedule.update');
+        Route::delete('/schedule', [AvailabilityController::class, 'destroy'])->name('schedule.destroy');
         Route::get('/schedule/courts', [AvailabilityController::class, 'courts'])->name('schedule.courts');
         Route::get('/season/{season}/export', [ExportController::class, 'season'])->name('export');
     });
