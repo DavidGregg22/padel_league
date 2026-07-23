@@ -44,28 +44,23 @@ class AvailabilityController extends Controller
 
         $startPadding = ($monthStart->dayOfWeekIso - 1);
 
-        // My availability (with times)
         $myAvailability = Availability::where('club_id', $club->id)
             ->where('user_id', $user->id)
             ->whereBetween('available_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->get()
             ->groupBy(fn ($a) => $a->available_date->toDateString());
 
-        // My dates (for calendar highlighting)
         $myDates = $myAvailability->keys()->toArray();
 
-        // Everyone's availability
         $allAvailability = Availability::where('club_id', $club->id)
             ->whereBetween('available_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->with('user')
             ->get()
             ->groupBy(fn ($a) => $a->available_date->toDateString());
 
-        // Suggestions
         $suggestions = [];
         if ($season) {
-            $singlesFixtures = $season->singlesFixtures();
-            foreach ($singlesFixtures as $fixture) {
+            foreach ($season->singlesFixtures() as $fixture) {
                 if ($fixture['played']) {
                     continue;
                 }
@@ -77,20 +72,17 @@ class AvailabilityController extends Controller
                     $p1Slots = $daySlots->where('user_id', $fixture['player1']->id);
                     $p2Slots = $daySlots->where('user_id', $fixture['player2']->id);
                     if ($p1Slots->isNotEmpty() && $p2Slots->isNotEmpty()) {
-                        // Find overlapping times
-                        $overlap = $this->findOverlap($p1Slots, $p2Slots);
                         $suggestions[] = [
                             'type' => 'singles',
                             'date' => $date,
                             'label' => $fixture['player1']->name.' vs '.$fixture['player2']->name,
-                            'times' => $overlap,
+                            'times' => $this->findOverlap($p1Slots, $p2Slots),
                         ];
                     }
                 }
             }
 
-            $doublesFixtures = $season->doublesFixtures();
-            foreach ($doublesFixtures as $fixture) {
+            foreach ($season->doublesFixtures() as $fixture) {
                 if ($fixture['played']) {
                     continue;
                 }
@@ -104,22 +96,18 @@ class AvailabilityController extends Controller
                         $fixture['pair2']->player1_id, $fixture['pair2']->player2_id,
                     ];
                     $allFree = true;
-                    $playerSlots = [];
                     foreach ($needed as $pid) {
-                        $slots = $daySlots->where('user_id', $pid);
-                        if ($slots->isEmpty()) {
+                        if ($daySlots->where('user_id', $pid)->isEmpty()) {
                             $allFree = false;
                             break;
                         }
-                        $playerSlots[] = $slots;
                     }
                     if ($allFree) {
-                        $overlap = $this->findMultiOverlap($playerSlots);
                         $suggestions[] = [
                             'type' => 'doubles',
                             'date' => $date,
                             'label' => $fixture['pair1']->displayName().' vs '.$fixture['pair2']->displayName(),
-                            'times' => $overlap,
+                            'times' => 'Available',
                         ];
                     }
                 }
@@ -131,14 +119,32 @@ class AvailabilityController extends Controller
         $canGoPrev = $prevMonth->gte($currentMonthStart);
         $canGoNext = $nextMonth->lte($maxMonth);
 
+        // Selected date from query param (preserved after form submit)
+        $selectedDay = $request->query('day', $now->toDateString());
+
+        // JSON for Alpine
+        $availabilityJson = $allAvailability->map(fn ($slots) => $slots->groupBy('user_id')->map(fn ($userSlots) => [
+            'name' => $userSlots->first()->user->name,
+            'slots' => $userSlots->map(fn ($s) => [
+                'start' => $s->start_time ? substr($s->start_time, 0, 5) : null,
+                'end' => $s->end_time ? substr($s->end_time, 0, 5) : null,
+            ])->values()->toArray(),
+        ])->values()->toArray())->toArray();
+
+        $myAvailabilityJson = $myAvailability->map(fn ($slots) => $slots->map(fn ($s) => [
+            'id' => $s->id,
+            'start' => $s->start_time ? substr($s->start_time, 0, 5) : null,
+            'end' => $s->end_time ? substr($s->end_time, 0, 5) : null,
+        ])->values()->toArray())->toArray();
+
         return view('league.schedule', compact(
             'club', 'season', 'dates', 'startPadding', 'myAvailability', 'myDates',
             'allAvailability', 'suggestions', 'monthStart', 'now',
-            'prevMonth', 'nextMonth', 'canGoPrev', 'canGoNext'
+            'prevMonth', 'nextMonth', 'canGoPrev', 'canGoNext',
+            'availabilityJson', 'myAvailabilityJson', 'selectedDay'
         ));
     }
 
-    /** Add a time slot for a date. */
     public function store(Request $request, Club $club)
     {
         $data = $request->validate([
@@ -156,25 +162,30 @@ class AvailabilityController extends Controller
             'end_time' => $data['end_time'],
         ]);
 
-        return back();
+        $month = Carbon::parse($data['date'])->format('Y-m');
+
+        return redirect()->to(route('club.schedule', ['club' => $club, 'month' => $month, 'day' => $data['date']]).'#times');
     }
 
-    /** Remove a specific availability slot. */
     public function destroy(Request $request, Club $club)
     {
         $data = $request->validate([
             'availability_id' => 'required|exists:availabilities,id',
         ]);
 
-        Availability::where('id', $data['availability_id'])
+        $slot = Availability::where('id', $data['availability_id'])
             ->where('user_id', auth()->id())
             ->where('club_id', $club->id)
-            ->delete();
+            ->first();
 
-        return back();
+        $date = $slot?->available_date;
+        $slot?->delete();
+
+        $month = $date ? Carbon::parse($date)->format('Y-m') : now()->format('Y-m');
+
+        return redirect()->to(route('club.schedule', ['club' => $club, 'month' => $month, 'day' => $date?->toDateString()]).'#times');
     }
 
-    /** Update an existing time slot. */
     public function update(Request $request, Club $club)
     {
         $data = $request->validate([
@@ -183,25 +194,27 @@ class AvailabilityController extends Controller
             'end_time' => 'required|date_format:H:i|after:start_time',
         ]);
 
-        Availability::where('id', $data['availability_id'])
+        $slot = Availability::where('id', $data['availability_id'])
             ->where('user_id', auth()->id())
             ->where('club_id', $club->id)
-            ->update([
-                'start_time' => $data['start_time'],
-                'end_time' => $data['end_time'],
-            ]);
+            ->first();
 
-        return back();
+        $slot?->update([
+            'start_time' => $data['start_time'],
+            'end_time' => $data['end_time'],
+        ]);
+
+        $month = $slot?->available_date ? Carbon::parse($slot->available_date)->format('Y-m') : now()->format('Y-m');
+
+        return redirect()->to(route('club.schedule', ['club' => $club, 'month' => $month, 'day' => $slot?->available_date?->toDateString()]).'#times');
     }
 
-    /** Old toggle method — now redirects to date view. */
     public function toggle(Request $request, Club $club)
     {
         $data = $request->validate([
             'date' => 'required|date|after_or_equal:today',
         ]);
 
-        // If they have slots for this date, remove all. Otherwise redirect to add.
         $existing = Availability::where('club_id', $club->id)
             ->where('user_id', auth()->id())
             ->where('available_date', $data['date'])
@@ -213,7 +226,6 @@ class AvailabilityController extends Controller
                 ->where('available_date', $data['date'])
                 ->delete();
         } else {
-            // Default: mark as "all day" (no specific time)
             Availability::create([
                 'club_id' => $club->id,
                 'user_id' => auth()->id(),
@@ -223,10 +235,11 @@ class AvailabilityController extends Controller
             ]);
         }
 
-        return back();
+        $month = Carbon::parse($data['date'])->format('Y-m');
+
+        return redirect()->to(route('club.schedule', ['club' => $club, 'month' => $month, 'day' => $data['date']]).'#times');
     }
 
-    /** Fetch Playtomic court availability. */
     public function courts(Request $request, Club $club)
     {
         $date = $request->query('date', now()->toDateString());
@@ -240,10 +253,8 @@ class AvailabilityController extends Controller
         return response()->json(['date' => $date, 'slots' => $slots]);
     }
 
-    /** Find overlapping time windows between two players' slots. */
     private function findOverlap($slotsA, $slotsB): string
     {
-        // If either has an "all day" slot (null times), they overlap
         if ($slotsA->whereNull('start_time')->isNotEmpty() || $slotsB->whereNull('start_time')->isNotEmpty()) {
             $specific = $slotsA->whereNotNull('start_time')->merge($slotsB->whereNotNull('start_time'));
             if ($specific->isEmpty()) {
@@ -253,7 +264,6 @@ class AvailabilityController extends Controller
             return $specific->map(fn ($s) => substr($s->start_time, 0, 5).'–'.substr($s->end_time, 0, 5))->join(', ');
         }
 
-        // Find actual overlapping ranges
         $overlaps = [];
         foreach ($slotsA as $a) {
             foreach ($slotsB as $b) {
@@ -266,18 +276,5 @@ class AvailabilityController extends Controller
         }
 
         return $overlaps ? implode(', ', array_unique($overlaps)) : 'Check times';
-    }
-
-    private function findMultiOverlap(array $playerSlots): string
-    {
-        // If any player has "all day", treat as available all times
-        foreach ($playerSlots as $slots) {
-            if ($slots->whereNull('start_time')->isEmpty() && $slots->whereNotNull('start_time')->isEmpty()) {
-                return '';
-            }
-        }
-
-        // Simple: if all have at least one slot, show "Available"
-        return 'Available';
     }
 }
